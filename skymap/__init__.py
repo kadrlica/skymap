@@ -18,6 +18,7 @@ import matplotlib.cm
 import pylab as plt
 import numpy as np
 import ephem
+import healpy as hp
 
 def get_datadir():
     from os.path import abspath,dirname,join
@@ -169,7 +170,6 @@ class Skymap(Basemap):
         return self.draw_hpxmap(celhpx,**kwargs)
 
     def draw_sfd(self,**kwargs):
-        import healpy as hp
         defaults = dict(rasterized=True,cmap=plt.cm.binary)
         setdefaults(kwargs,defaults)
         dirname  = '/Users/kadrlica/bliss/observing/data'
@@ -200,13 +200,29 @@ class Skymap(Basemap):
         setdefaults(kwargs,defaults)
         self.scatter(*self.proj(fields['RA'],fields['DEC']),**kwargs)
 
+    def draw_hist2d(self, lon, lat, nside=256, **kwargs):
+        """
+        Draw a 2d histogram of coordinantes x,y.
+        """
+        try:
+            pix = hp.ang2pix(nside,lon,lat,lonlat=True)
+        except TypeError:
+            pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+
+        npix = hp.nside2npix(nside)
+        hpxmap = hp.UNSEEN*np.ones(npix)
+        idx,cts = np.unique(pix,return_counts=True)
+        hpxmap[idx] = cts
+
+        return hpxmap,self.draw_hpxmap(hpxmap,**kwargs)
+
+
     def draw_hpxmap(self, hpxmap, xsize=800, **kwargs):
         """
         Use pcolormesh to draw healpix map
         """
-        import healpy
         if not isinstance(hpxmap,np.ma.MaskedArray):
-            mask = ~np.isfinite(hpxmap) | (hpxmap==healpy.UNSEEN)
+            mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
             hpxmap = np.ma.MaskedArray(hpxmap,mask=mask)
 
         vmin,vmax = np.percentile(hpxmap.compressed(),[0.1,99.9])
@@ -220,14 +236,14 @@ class Skymap(Basemap):
         lat = np.linspace(-90., 90., xsize)
         lon, lat = np.meshgrid(lon, lat)
 
-        nside = healpy.get_nside(hpxmap.data)
+        nside = hp.get_nside(hpxmap.data)
         try:
-            pix = healpy.ang2pix(nside,lon,lat,lonlat=True)
+            pix = hp.ang2pix(nside,lon,lat,lonlat=True)
         except TypeError:
-            pix = healpy.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+            pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
 
         values = hpxmap[pix]
-        #mask = ((values == healpy.UNSEEN) | (~np.isfinite(values)))
+        #mask = ((values == hp.UNSEEN) | (~np.isfinite(values)))
         #values = np.ma.array(values,mask=mask)
         if self.projection is 'ortho':
             im = self.pcolor(lon,lat,values,**kwargs)
