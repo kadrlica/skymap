@@ -4,7 +4,9 @@ Generic python script.
 """
 __author__ = "Alex Drlica-Wagner"
 
-import skymapy.skymap
+import skymap
 
 def test_create_skymap():
-    skymap = skymapy.skymap.Skymap()
+    m = skymap.Skymap()
+    m = skymap.McBrydeSkymap()
+    m = skymap.OrthoSkymap()

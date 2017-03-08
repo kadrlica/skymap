@@ -4,16 +4,13 @@ try: from setuptools import setup
 except ImportError: from distutils.core import setup
 import versioneer
 
-here = os.path.abspath(os.path.dirname(__file__))
-
-def read(filename):
-    return open(os.path.join(here,filename)).read()
+URL = 'https://github.com/kadrlica/skymap'
 
 setup(
     name='skymap',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    url='https://github.com/kadrlica/skymap',
+    url=URL,
     author='Alex Drlica-Wagner',
     author_email='kadrlica@fnal.gov',
     scripts = [],
@@ -22,13 +19,15 @@ setup(
         'numpy',
         'scipy',
         'basemap=1.0.7',
-        'ephem'
+        'ephem',
+        'healpy'
     ],
     packages=['skymap'],
-    description="A place to hold python tools.",
-    long_description=read('README.md'),
+    package_data={'skymap':['data/*.txt']},
+    description="Python tools for making skymaps",
+    long_description="See %s"%URL,
     platforms='any',
-    keywords='python tools',
+    keywords='python astronomy plotting',
     classifiers = [
         'Programming Language :: Python',
         'Development Status :: 2 - Pre-Alpha',

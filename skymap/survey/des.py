@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 """
-Generic python script.
+Extension for DES.
 """
-__author__ = "Alex Drlica-Wagner"
+import os
 
-from skymapy.skymap import Skymap
+import numpy as np
 
-class DESSkymap(Skymap):
+from skymap.utils import setdefaults,get_datadir
+from skymap.core import Skymap,McBrydeSkymap,OrthoSkymap
+
+class SurveySkymap(Skymap):
 
     def draw_maglites(self,**kwargs):
         defaults=dict(color='blue', lw=2)
@@ -31,7 +34,7 @@ class DESSkymap(Skymap):
         defaults=dict(color='red', lw=2)
         setdefaults(kwargs,defaults)
 
-        filename = os.path.join(get_datadir(),'round13-poly.txt')
+        filename = os.path.join(get_datadir(),'des-round13-poly.txt')
         self.draw_polygon(filename,**kwargs)
 
     def draw_smash(self,**kwargs):
@@ -122,3 +125,7 @@ class DESSkymap(Skymap):
         galhpx = hp.read_map(os.path.join(dirname,filename))
         celhpx = obztak.utils.projector.hpx_gal2cel(galhpx)
         return self.draw_hpxmap(np.log10(celhpx),**kwargs)
+
+class SurveyMcBryde(SurveySkymap,McBrydeSkymap): pass
+class SurveyOrtho(SurveySkymap,OrthoSkymap): pass
+
