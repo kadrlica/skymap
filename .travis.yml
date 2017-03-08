@@ -1,0 +1,27 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.5"
+
+sudo: false
+
+notifications:
+  email: false
+ 
+# Setup dependencies and install package
+install:
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n travis-env python=$TRAVIS_PYTHON_VERSION numpy scipy pandas matplotlib basemap nose
+  - source activate travis-env
+  - python setup.py install
+
+# command to run tests
+script: 
+  - python -c "import toolbelt"
+  - nosetests

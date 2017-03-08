@@ -1,0 +1,19 @@
+### Emacs
+\#*#
+\.#*
+*~
+
+### Python
+*.pyc
+*.egg-info/
+build/
+dist/
+
+### Latex
+*.fls
+*.aux
+*.log
+*.fdb_*
+*.out
+*.blg
+*.bbl
