@@ -10,10 +10,10 @@ def read(filename):
     return open(os.path.join(here,filename)).read()
 
 setup(
-    name='skymapy',
+    name='skymap',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    url='https://github.com/kadrlica/skymapy',
+    url='https://github.com/kadrlica/skymap',
     author='Alex Drlica-Wagner',
     author_email='kadrlica@fnal.gov',
     scripts = [],
@@ -23,7 +23,7 @@ setup(
         'scipy',
         'basemap'
     ],
-    packages=['skymapy'],
+    packages=['skymap'],
     description="A place to hold python tools.",
     long_description=read('README.md'),
     platforms='any',

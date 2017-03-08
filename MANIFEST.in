@@ -1,2 +1,2 @@
 include versioneer.py
-include skymapy/_version.py
+include skymap/_version.py

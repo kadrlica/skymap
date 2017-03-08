@@ -15,7 +15,7 @@ import pylab as plt
 import numpy as np
 import ephem
 
-from skymapy import get_datadir, setdefaults
+from skymap import get_datadir, setdefaults
 
 
 class Skymap(Basemap):
