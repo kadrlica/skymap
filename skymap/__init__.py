@@ -33,7 +33,7 @@ class Skymap(Basemap):
 
     def __init__(self, *args, **kwargs):
         self.observer = kwargs.pop('observer',ephem.Observer())
-        self.set_date(kwargs.pop('date'))
+        self.set_date(kwargs.pop('date',None))
         super(Skymap,self).__init__(self,*args,**kwargs)
 
         self.draw_parallels()
