@@ -17,7 +17,12 @@ setup(
     author='Alex Drlica-Wagner',
     author_email='kadrlica@fnal.gov',
     scripts = [],
-    install_requires=[],
+    install_requires=[
+        'matplotlib',
+        'numpy',
+        'scipy',
+        'basemap'
+    ],
     packages=['skymapy'],
     description="A place to hold python tools.",
     long_description=read('README.md'),
