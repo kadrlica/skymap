@@ -21,7 +21,8 @@ setup(
         'matplotlib',
         'numpy',
         'scipy',
-        'basemap'
+        'basemap=1.0.7',
+        'ephem'
     ],
     packages=['skymap'],
     description="A place to hold python tools.",
