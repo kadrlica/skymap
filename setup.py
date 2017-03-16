@@ -18,7 +18,7 @@ setup(
         'matplotlib',
         'numpy',
         'scipy',
-        'basemap=1.0.7',
+        'basemap',
         'ephem',
         'healpy'
     ],
