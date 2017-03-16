@@ -8,6 +8,7 @@ import logging
 from collections import OrderedDict as odict
 
 from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.basemap import pyproj
 import matplotlib
 import pylab as plt
 import numpy as np
@@ -55,6 +56,20 @@ class Skymap(Basemap):
         if not args: defaults.update(meridians=np.arange(0,420,60))
         setdefaults(kwargs,defaults)
         return self.drawmeridians(*args,**kwargs)
+
+    def draw_great_circle(self,lon1,lat1,lon2,lat2,npoints=100.,**kwargs):
+        # use great circle formula for a perfect sphere.
+	gc = pyproj.Geod(a=self.rmajor,b=self.rminor)
+	az12,az21,dist = gc.inv(lon1,lat1,lon2,lat2)
+	# npoints = int((dist+0.5*1000.*del_s)/(1000.*del_s))
+	lonlats = gc.npts(lon1,lat1,lon2,lat2,npoints)
+	lons = [lon1]; lats = [lat1]
+	for lon, lat in lonlats:
+	    lons.append(lon)
+	    lats.append(lat)
+	lons.append(lon2); lats.append(lat2)
+	x, y = self(lons, lats)
+	return self.plot(x,y,**kwargs)
 
     def proj(self,lon,lat):
         """ Remove points outside of projection """
