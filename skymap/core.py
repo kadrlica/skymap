@@ -73,8 +73,11 @@ class Skymap(Basemap):
     def roll(ra,dec,wrap=180.):
         """ Roll an ra,dec combination to split 180 boundary """
         idx = np.abs(ra - wrap).argmin()
-        if   (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
+        if idx+1 == len(ra): idx = 0
+        elif (ra[idx] == wrap): idx += 1
+        elif (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
         elif (ra[idx]>wrap) and (ra[idx+1]<wrap): idx += 1
+
         return np.roll(ra,-idx), np.roll(dec,-idx)
 
     def draw_polygon(self,filename,**kwargs):
@@ -82,11 +85,11 @@ class Skymap(Basemap):
         defaults=dict(color='k', lw=2)
         setdefaults(kwargs,defaults)
 
-        perim = np.loadtxt(filename,dtype=[('ra',float),('dec',float)])
-        self.draw_polygon_radec(perim['ra'],perim['dec'],**kwargs)
+        poly = np.loadtxt(filename,dtype=[('ra',float),('dec',float)])
+        self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
 
     def draw_polygon_radec(self,ra,dec,**kwargs):
-        xy = self.proj(ra,dec)
+        xy = self.proj(*self.roll(ra,dec))
         self.plot(*xy,**kwargs)
 
     def draw_zenith(self, radius=1.0, **kwargs):

@@ -10,3 +10,5 @@ __version__ = get_versions()['version']
 del get_versions
 
 from skymap.core import Skymap, McBrydeSkymap, OrthoSkymap
+from skymap.survey import SurveySkymap,SurveyMcBryde,SurveyOrtho
+from skymap.survey import DESSkymap
