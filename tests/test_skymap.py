@@ -8,7 +8,8 @@ import unittest
 import os
 
 import matplotlib
-if not os.getenv('DISPLAY'): matplotlib.use('Agg')
+#if not os.getenv('DISPLAY'): matplotlib.use('Agg')
+matplotlib.use('Agg')
 import pylab as plt
 
 from skymap import Skymap,McBrydeSkymap,OrthoSkymap

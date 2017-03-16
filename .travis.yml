@@ -23,6 +23,6 @@ install:
 
 # command to run tests
 script: 
-  - python -c "import skymap; print skymap.__version__"
+  - python -c "import skymap; print(skymap.__version__)"
   - echo $DISPLAY
   - nosetests
