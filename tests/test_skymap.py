@@ -5,7 +5,12 @@ Generic python script.
 __author__ = "Alex Drlica-Wagner"
 
 import unittest
+import os
+
+import matplotlib
+if not os.getenv('DISPLAY'): matplotlib.use('Agg')
 import pylab as plt
+
 from skymap import Skymap,McBrydeSkymap,OrthoSkymap
 from skymap import SurveySkymap,SurveyMcBryde,SurveyOrtho
 from skymap import DESSkymap
