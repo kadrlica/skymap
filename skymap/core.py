@@ -59,17 +59,17 @@ class Skymap(Basemap):
 
     def draw_great_circle(self,lon1,lat1,lon2,lat2,npoints=100.,**kwargs):
         # use great circle formula for a perfect sphere.
-	gc = pyproj.Geod(a=self.rmajor,b=self.rminor)
-	az12,az21,dist = gc.inv(lon1,lat1,lon2,lat2)
-	# npoints = int((dist+0.5*1000.*del_s)/(1000.*del_s))
-	lonlats = gc.npts(lon1,lat1,lon2,lat2,npoints)
-	lons = [lon1]; lats = [lat1]
-	for lon, lat in lonlats:
-	    lons.append(lon)
-	    lats.append(lat)
-	lons.append(lon2); lats.append(lat2)
-	x, y = self(lons, lats)
-	return self.plot(x,y,**kwargs)
+        gc = pyproj.Geod(a=self.rmajor,b=self.rminor)
+        az12,az21,dist = gc.inv(lon1,lat1,lon2,lat2)
+        # npoints = int((dist+0.5*1000.*del_s)/(1000.*del_s))
+        lonlats = gc.npts(lon1,lat1,lon2,lat2,npoints)
+        lons = [lon1]; lats = [lat1]
+        for lon, lat in lonlats:
+            lons.append(lon)
+            lats.append(lat)
+        lons.append(lon2); lats.append(lat2)
+        x, y = self(lons, lats)
+        return self.plot(x,y,**kwargs)
 
     def proj(self,lon,lat):
         """ Remove points outside of projection """
