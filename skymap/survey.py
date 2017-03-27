@@ -13,7 +13,7 @@ from mpl_toolkits.axisartist import Subplot
 import mpl_toolkits.axisartist as axisartist
 import  mpl_toolkits.axisartist.angle_helper as angle_helper
 
-from skymap.utils import setdefaults,get_datadir
+from skymap.utils import setdefaults,get_datadir,hpx_gal2cel
 from skymap.core import Skymap,McBrydeSkymap,OrthoSkymap
 
 class SurveySkymap(Skymap):
@@ -122,15 +122,16 @@ class SurveySkymap(Skymap):
         if log: self.draw_hpxmap(np.log10(hpxmap))
         else:   self.draw_hpxmap(hpxmap)
 
-    def draw_sfd(self,**kwargs):
+    def draw_sfd(self,filename=None,**kwargs):
         import healpy as hp
         defaults = dict(rasterized=True,cmap=plt.cm.binary)
         setdefaults(kwargs,defaults)
-        dirname  = '/Users/kadrlica/bliss/observing/data'
-        filename = 'lambda_sfd_ebv.fits'
+        if not filename:
+            datadir  = '/Users/kadrlica/bliss/observing/data/'
+            filename = datadir+'lambda_sfd_ebv.fits'
 
-        galhpx = hp.read_map(os.path.join(dirname,filename))
-        celhpx = obztak.utils.projector.hpx_gal2cel(galhpx)
+        galhpx = hp.read_map(filename)
+        celhpx = hpx_gal2cel(galhpx)
         return self.draw_hpxmap(np.log10(celhpx),**kwargs)
 
 class SurveyMcBryde(SurveySkymap,McBrydeSkymap): pass

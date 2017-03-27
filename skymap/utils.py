@@ -5,6 +5,7 @@ Random utilities
 import os, os.path
 
 import numpy as np
+import healpy as hp
 
 def get_datadir():
     from os.path import abspath,dirname,join
@@ -69,6 +70,12 @@ def cel2gal(ra, dec):
     glon = (lcp - lcpml + (2. * np.pi)) % (2. * np.pi)
     return np.degrees(glon), np.degrees(glat)
 
+def phi2lon(phi): return np.degrees(phi)
+def lon2phi(lon): return np.radians(lon)
+
+def theta2lat(theta): return 90. - np.degrees(theta)
+def lat2theta(lat): return np.radians(90. - lat)
+
 def hpx_gal2cel(galhpx):
     npix = len(galhpx)
     nside = hp.npix2nside(npix)
@@ -78,3 +85,20 @@ def hpx_gal2cel(galhpx):
     glon,glat = cel2gal(ra,dec)
 
     return galhpx[ang2pix(nside,glon,glat)]
+
+def pix2ang(nside, pix):
+    """
+    Return (lon, lat) in degrees instead of (theta, phi) in radians
+    """
+    theta, phi =  hp.pix2ang(nside, pix)
+    lon = phi2lon(phi)
+    lat = theta2lat(theta)
+    return lon, lat
+
+def ang2pix(nside, lon, lat, coord='GAL'):
+    """
+    Input (lon, lat) in degrees instead of (theta, phi) in radians
+    """
+    theta = np.radians(90. - lat)
+    phi = np.radians(lon)
+    return hp.ang2pix(nside, theta, phi)
