@@ -5,7 +5,7 @@
 [![Release](https://img.shields.io/github/release/kadrlica/skymap.svg)](../../releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../)
 
-Python skymaps based on [matplotlib.basemap](http://matplotlib.org/basemap/).
+Python skymaps based on [`matplotlib.basemap`](http://matplotlib.org/basemap/).
 
 # Installation
 
