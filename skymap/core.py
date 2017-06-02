@@ -14,6 +14,7 @@ import pylab as plt
 import numpy as np
 import ephem
 import healpy as hp
+import scipy.ndimage as nd
 
 from skymap.utils import setdefaults,get_datadir
 from skymap.utils import cel2gal, gal2cel
@@ -242,6 +243,25 @@ class Skymap(Basemap):
 
         return hpxmap,self.draw_hpxmap(hpxmap,**kwargs)
 
+    def hpx2xy(self, hpxmap, xsize=800, lonra=[0.,360.], latra=[-90,90]):
+        lon = np.linspace(lonra[0],lonra[1], xsize+1)
+        lat = np.linspace(latra[0],latra[1], xsize+1)
+        lon, lat = np.meshgrid(lon, lat)
+
+        if isinstance(hpxmap,np.ma.MaskedArray):
+            nside = hp.get_nside(hpxmap.data)
+        else:
+            nside = hp.get_nside(hpxmap)
+        
+        try:
+            pix = hp.ang2pix(nside,lon,lat,lonlat=True)
+        except TypeError:
+            pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+
+        pix = pix[:-1,:-1]
+        values = hpxmap[pix]
+        return lon,lat,values
+
     def draw_hpxmap(self, hpxmap, xsize=800, **kwargs):
         """
         Use pcolormesh to draw healpix map
@@ -257,8 +277,46 @@ class Skymap(Basemap):
 
         ax = plt.gca()
 
-        lon = np.linspace(0, 360., xsize)
-        lat = np.linspace(-90., 90., xsize)
+        #lon = np.linspace(0, 360., xsize)
+        #lat = np.linspace(-90., 90., xsize)
+        #lon, lat = np.meshgrid(lon, lat)
+        # 
+        #nside = hp.get_nside(hpxmap.data)
+        #try:
+        #    pix = hp.ang2pix(nside,lon,lat,lonlat=True)
+        #except TypeError:
+        #    pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+        # 
+        #values = hpxmap[pix]
+
+        lon,lat,values = self.hpx2xy(hpxmap,size)
+
+        #mask = ((values == hp.UNSEEN) | (~np.isfinite(values)))
+        #values = np.ma.array(values,mask=mask)
+        if self.projection is 'ortho':
+            im = self.pcolor(lon,lat,values,**kwargs)
+        else:
+            im = self.pcolormesh(lon,lat,values,**kwargs)
+
+        return im
+
+    def draw_hpxmap_rgb(self, r, g, b, xsize=800, **kwargs):
+        hpxmap = np.array([r,g,b])
+        if not isinstance(hpxmap,np.ma.MaskedArray):
+            mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
+            hpxmap = np.ma.MaskedArray(hpxmap,mask=mask)
+
+        vmin,vmax = np.percentile(hpxmap.compressed(),[0.1,99.9])
+
+        defaults = dict(latlon=True, rasterized=True, vmin=vmin, vmax=vmax)
+        setdefaults(kwargs,defaults)
+
+        ax = plt.gca()
+        lonra = [-180.,180.]
+        latra = [-90.,90]
+
+        lon = np.linspace(lonra[0], lonra[1], xsize)
+        lat = np.linspace(latra[0], latra[1], xsize)
         lon, lat = np.meshgrid(lon, lat)
 
         nside = hp.get_nside(hpxmap.data)
@@ -267,13 +325,33 @@ class Skymap(Basemap):
         except TypeError:
             pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
 
-        values = hpxmap[pix]
-        #mask = ((values == hp.UNSEEN) | (~np.isfinite(values)))
-        #values = np.ma.array(values,mask=mask)
+        lon,lat,R = self.hpx2xy(r,lonra=lonra,latra=latra,xsize=xsize)
+        G = self.hpx2xy(g,lonra=lonra,latra=latra,xsize=xsize)[-1]
+        B = self.hpx2xy(b,lonra=lonra,latra=latra,xsize=xsize)[-1]
+
+        # Colors are all normalized to R... probably not desired...
+        #norm = np.nanmax(R)
+        #r = self.set_scale(R,norm=norm)
+        #g = self.set_scale(G,norm=norm)
+        #b = self.set_scale(B,norm=norm)
+
+        # Better?
+        kw = dict(log=False,sigma=0.5)
+        r = self.set_scale(R,norm=np.nanmax(R),**kw)
+        g = self.set_scale(G,norm=np.nanmax(G),**kw)
+        b = self.set_scale(B,norm=np.nanmax(B),**kw)
+        
+        #rgb = np.array([r,g,b]).T
+        color_tuples = np.array([r.filled().flatten(), 
+                                 g.filled().flatten(), 
+                                 b.filled().flatten()]).T
+        color_tuples[np.where(np.isnan(color_tuples))] = 0.0
+        setdefaults(kwargs,{'color':color_tuples})
+        
         if self.projection is 'ortho':
-            im = self.pcolor(lon,lat,values,**kwargs)
+            im = self.pcolor(lon,lat,r,**kwargs)
         else:
-            im = self.pcolormesh(lon,lat,values,**kwargs)
+            im = self.pcolormesh(lon,lat,r,**kwargs)
 
         return im
 
@@ -292,6 +370,28 @@ class Skymap(Basemap):
             collection = matplotlib.collections.PolyCollection(corners,**kwargs)
             ax.add_collection(collection)
         plt.draw()
+
+    def set_scale(self, array, log=True, sigma=1.0, norm=None):
+        if isinstance(array,np.ma.MaskedArray):
+            out = copy.deepcopy(array)
+        else:
+            out = np.ma.array(array,mask=np.isnan(array),fill_value=np.nan)
+
+        if sigma > 0: 
+            out.data[:] = nd.gaussian_filter(out.filled(0),sigma=sigma)[:]
+            
+        if log: 
+            out = np.log10(out)
+            if norm: norm = np.log10(norm)
+
+        if norm is None:
+            norm = np.percentile(out.compressed(),97.5)
+
+        out /= norm
+        out = np.clip(out,0.0,1.0)
+        return out
+
+   
 
 class McBrydeSkymap(Skymap):
     def __init__(self,*args,**kwargs):
