@@ -289,7 +289,9 @@ class Skymap(Basemap):
         # 
         #values = hpxmap[pix]
 
-        lon,lat,values = self.hpx2xy(hpxmap,size)
+        lonra = [-180.,180.]
+        latra = [-90.,90]
+        lon,lat,values = self.hpx2xy(hpxmap,lonra=lonra,latra=latra,xsize=xsize)
 
         #mask = ((values == hp.UNSEEN) | (~np.isfinite(values)))
         #values = np.ma.array(values,mask=mask)
