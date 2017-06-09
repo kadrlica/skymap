@@ -58,19 +58,61 @@ class Skymap(Basemap):
         setdefaults(kwargs,defaults)
         return self.drawmeridians(*args,**kwargs)
 
-    def draw_great_circle(self,lon1,lat1,lon2,lat2,npoints=100.,**kwargs):
-        # use great circle formula for a perfect sphere.
-        gc = pyproj.Geod(a=self.rmajor,b=self.rminor)
-        az12,az21,dist = gc.inv(lon1,lat1,lon2,lat2)
-        # npoints = int((dist+0.5*1000.*del_s)/(1000.*del_s))
-        lonlats = gc.npts(lon1,lat1,lon2,lat2,npoints)
-        lons = [lon1]; lats = [lat1]
-        for lon, lat in lonlats:
-            lons.append(lon)
-            lats.append(lat)
-        lons.append(lon2); lats.append(lat2)
-        x, y = self(lons, lats)
-        return self.plot(x,y,**kwargs)
+    def cartesian(self, ra, dec):
+        x = np.cos(ra) * np.cos(dec)
+        y = np.sin(ra) * np.cos(dec)
+        z = np.sin(dec)
+        return x, y, z
+
+    def spherical(self, x, y, z):
+        ra = np.arctan2(y, x)
+        dec = np.pi / 2 - np.arccos(z)
+        return ra, dec
+
+    def draw_great_circle(self, lon1, lat1, lon2, lat2, **kwargs):
+        lon1 = np.radians(lon1)
+        lat1 = np.radians(lat1)
+        lon2 = np.radians(lon2)
+        lat2 = np.radians(lat2)
+
+        x1, y1, z1 = self.cartesian(lon1, lat1)
+        x2, y2, z2 = self.cartesian(lon2, lat2)
+
+        u = np.array([x1, y1, z1])
+        v = np.array([x2, y2, z2])
+        w = np.cross(np.cross(u, v), u)
+        w /= np.linalg.norm(w)
+ 
+        tt = np.linspace(0, 2 * np.pi, 100)
+
+        xx = []
+        yy = []
+        for t in tt:
+            r = u * np.cos(t) + w * np.sin(t)
+            lon, lat = self.spherical(r[0], r[1], r[2])
+            xx.append(np.degrees(lon))
+            yy.append(np.degrees(lat))
+
+        x2 = np.copy(xx)
+        y2 = np.copy(yy)
+        for i in range(len(xx) - 1):
+            if np.abs(xx[i] - xx[i + 1]) > 300: # jump would be 360, but could be smaller bc finite number of points
+                x1 = xx[:i + 1]
+                x2 = xx[i + 1:]
+                y1 = yy[:i + 1]
+                y2 = yy[i + 1:]
+
+                x1, y1 = self(x1, y1)
+                if 'c' not in kwargs:
+                    self.plot(x1, y1, c='#1F618D', **kwargs)
+                else:
+                    self.plot(x1, y1, **kwargs)
+        
+        x2, y2 = self(x2, y2)
+        if 'c' not in kwargs:
+            return self.plot(x2, y2, c='#1F618D', **kwargs)
+        else:
+            return self.plot(x2, y2, **kwargs)
 
     def proj(self,lon,lat):
         """ Remove points outside of projection """
