@@ -338,15 +338,16 @@ class Skymap(Basemap):
         #b = self.set_scale(B,norm=norm)
 
         # Better?
-        kw = dict(log=False,sigma=0.5)
-        r = self.set_scale(R,norm=np.nanmax(R),**kw)
-        g = self.set_scale(G,norm=np.nanmax(G),**kw)
-        b = self.set_scale(B,norm=np.nanmax(B),**kw)
+        norm=np.percentile(R[~np.isnan(R)],97.5)
+        kw = dict(log=False,sigma=0.5,norm=norm)
+        r = self.set_scale(R,**kw)
+        g = self.set_scale(G,**kw)
+        b = self.set_scale(B,**kw)
         
         #rgb = np.array([r,g,b]).T
-        color_tuples = np.array([r.filled().flatten(), 
-                                 g.filled().flatten(), 
-                                 b.filled().flatten()]).T
+        color_tuples = np.array([r.filled(np.nan).flatten(), 
+                                 g.filled(np.nan).flatten(), 
+                                 b.filled(np.nan).flatten()]).T
         color_tuples[np.where(np.isnan(color_tuples))] = 0.0
         setdefaults(kwargs,{'color':color_tuples})
         
@@ -373,26 +374,25 @@ class Skymap(Basemap):
             ax.add_collection(collection)
         plt.draw()
 
-    def set_scale(self, array, log=True, sigma=1.0, norm=None):
+    def set_scale(self, array, log=False, sigma=1.0, norm=None):
         if isinstance(array,np.ma.MaskedArray):
             out = copy.deepcopy(array)
         else:
             out = np.ma.array(array,mask=np.isnan(array),fill_value=np.nan)
 
-        if sigma > 0: 
+        if sigma > 0:
             out.data[:] = nd.gaussian_filter(out.filled(0),sigma=sigma)[:]
             
+        if norm is None:
+            norm = np.percentile(out.compressed(),97.5)
+
         if log: 
             out = np.log10(out)
             if norm: norm = np.log10(norm)
 
-        if norm is None:
-            norm = np.percentile(out.compressed(),97.5)
-
         out /= norm
         out = np.clip(out,0.0,1.0)
         return out
-
    
 
 class McBrydeSkymap(Skymap):
