@@ -18,7 +18,7 @@ Then you can install `skymap` via pip:
 ```
 pip install skymap
 ```
-or if you want the bleeding version, you can clone and install via github:
+or if you want the bleeding edge of the code, you can clone and install via github:
 ```
 git clone https://github.com/kadrlica/skymap.git
 cd skymap
