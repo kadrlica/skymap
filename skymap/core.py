@@ -287,7 +287,7 @@ class Skymap(Basemap):
 
     def hpx2xy(self, hpxmap, xsize=800, lonra=[0.,360.], latra=[-90,90]):
         lon = np.linspace(lonra[0],lonra[1], xsize+1)
-        lat = np.linspace(latra[0],latra[1], xsize+1)
+        lat = np.linspace(latra[0],latra[1], int(self.aspect*xsize)+1))
         lon, lat = np.meshgrid(lon, lat)
 
         if isinstance(hpxmap,np.ma.MaskedArray):
@@ -360,7 +360,7 @@ class Skymap(Basemap):
         latra = [-90.,90]
 
         lon = np.linspace(lonra[0], lonra[1], xsize)
-        lat = np.linspace(latra[0], latra[1], xsize)
+        lat = np.linspace(latra[0], latra[1], xsize*self.aspect)
         lon, lat = np.meshgrid(lon, lat)
 
         nside = hp.get_nside(hpxmap.data)

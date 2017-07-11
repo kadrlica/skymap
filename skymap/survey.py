@@ -167,6 +167,13 @@ class DESSkymap(SurveyMcBryde):
         ax.set_xlim(min(x),max(x))
         ax.set_ylim(min(y),max(y))
         ax.grid(True)
+
+        # Fix the aspect ratio for full-sky projections
+        if self.fix_aspect:
+            ax.set_aspect('equal',anchor=self.anchor)
+        else:
+            ax.set_aspect('auto',anchor=self.anchor)
+
         return ax.get_xlim(),ax.get_ylim()
 
     def create_axes(self,rect=111):
