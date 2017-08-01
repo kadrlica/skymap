@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Extension for DES.
+Extension for individual surveys.
 """
 import os
 
@@ -17,8 +17,10 @@ from skymap.utils import setdefaults,get_datadir,hpx_gal2cel
 from skymap.core import Skymap,McBrydeSkymap,OrthoSkymap
 
 class SurveySkymap(Skymap):
-
+    """Extending to survey specific functions.
+    """
     def draw_maglites(self,**kwargs):
+        """Draw the MagLiteS footprint"""
         defaults=dict(color='blue', lw=2)
         setdefaults(kwargs,defaults)
 
@@ -26,6 +28,7 @@ class SurveySkymap(Skymap):
         self.draw_polygon(filename,**kwargs)
 
     def draw_bliss(self,**kwargs):
+        """Draw the BLISS footprint"""
         defaults=dict(color='magenta', lw=2)
         setdefaults(kwargs,defaults)
 
@@ -36,8 +39,7 @@ class SurveySkymap(Skymap):
             self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
 
     def draw_des(self,**kwargs):
-        """ Draw the DES footprint on this Basemap instance.
-        """
+        """ Draw the DES footprint. """
         defaults=dict(color='red', lw=2)
         setdefaults(kwargs,defaults)
 
@@ -45,6 +47,7 @@ class SurveySkymap(Skymap):
         self.draw_polygon(filename,**kwargs)
 
     def draw_smash(self,**kwargs):
+        """ Draw the SMASH fields. """
         defaults=dict(facecolor='none',color='k')
         setdefaults(kwargs,defaults)
 
@@ -137,28 +140,49 @@ class SurveySkymap(Skymap):
 class SurveyMcBryde(SurveySkymap,McBrydeSkymap): pass
 class SurveyOrtho(SurveySkymap,OrthoSkymap): pass
 
-class FormatterDES(angle_helper.FormatterDMS):
+class ZoomFormatter(angle_helper.FormatterDMS):
+    def _wrap_angle(self, angle):
+        print angle
+        return angle
 
     def __call__(self, direction, factor, values):
         values = np.asarray(values)
-        ss = np.where(values>=0, 1, -1)
-        values = np.mod(np.abs(values),360)
-        values -= 360*(values > 180)
-        return [self.fmt_d % (s*int(v),) for (s, v) in zip(ss, values)]
+        #ss = np.where(values>=0, 1, -1)
+        values = self._wrap_angle(values)
+        ticks = [self.fmt_d % (int(v),) for v in values]
+        #print ticks
+        return ticks
 
-class DESSkymap(SurveyMcBryde):
-    """Class for plotting a zoom on DES. This is not as flexible as the
-    general basemap plots.
-    """
-    # RA, DEC frame limits
+class ZoomFormatter360(ZoomFormatter):
+    def _wrap_angle(self, angle):
+        """Ticks go from 0 to 360"""
+        angle = np.mod(angle,360)
+        return angle
+
+class ZoomFormatter180(ZoomFormatter):
+    def _wrap_angle(self, angle):
+        """Ticks go from -180 to 180"""
+        angle = np.mod(np.abs(angle),360)
+        angle -= 360*(angle > 180)
+        return angle
+    
+class SurveyZoom(SurveyMcBryde):
     FRAME = [[-50,-50,90,90],[10,-75,10,-75]]
+    FIGSIZE=(8,5)
+
+    def __init__(self, *args, **kwargs):
+        super(SurveyZoom,self).__init__(*args, **kwargs)
+        self.create_axes()
+
+    @classmethod
+    def figure(cls,**kwargs):
+        """ Create a figure of proper size """
+        defaults=dict(figsize=cls.FIGSIZE)
+        setdefaults(kwargs,defaults)
+        return plt.figure(**kwargs)
 
     def draw_parallels(*args, **kwargs): return
     def draw_meridians(*args, **kwargs): return
-
-    def __init__(self, *args, **kwargs):
-        super(DESSkymap,self).__init__(*args, **kwargs)
-        self.create_axes()
 
     def set_axes_limits(self, ax=None):
         if ax is None: ax = plt.gca()
@@ -166,8 +190,18 @@ class DESSkymap(SurveyMcBryde):
         x,y = self(*self.FRAME)
         ax.set_xlim(min(x),max(x))
         ax.set_ylim(min(y),max(y))
-        ax.grid(True)
+        ax.grid(True,linestyle=':',color='k',lw=0.5)
+
+        # The aspect ratio of the zoom in will be:
+        if self.fix_aspect:
+            ax.set_aspect('equal',anchor=self.anchor)
+        else:
+            ax.set_aspect('auto',anchor=self.anchor)
+
         return ax.get_xlim(),ax.get_ylim()
+
+    def create_tick_formatter(self):
+        return ZoomFormatter()
 
     def create_axes(self,rect=111):
         """
@@ -196,7 +230,7 @@ class DESSkymap(SurveyMcBryde):
         grid_locator2 = angle_helper.LocatorD(6,include_last=False)
 
         # Format the values of the grid
-        tick_formatter1 = FormatterDES()
+        tick_formatter1 = self.create_tick_formatter()
         tick_formatter2 = angle_helper.FormatterDMS()
 
         grid_helper = GridHelperCurveLinear((tr, inv_tr),
@@ -222,3 +256,31 @@ class DESSkymap(SurveyMcBryde):
 
         return fig,ax
 
+class DESSkymap(SurveyZoom):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[-50,-50,90,90],[10,-75,10,-75]]
+    FIGSIZE=(8,5)
+
+    def __init__(self, *args, **kwargs):
+        defaults = dict(lon_0=0)
+        setdefaults(kwargs,defaults)
+        super(DESSkymap,self).__init__(*args, **kwargs)
+
+    def create_tick_formatter(self):
+        return ZoomFormatter180()
+
+class BlissSkymap(SurveyZoom):
+    """Class for plotting a zoom on BLISS. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[130,130,0,0],[-5,-55,-5,-55]]
+    FIGSIZE = (12,3)
+        
+    def __init__(self, *args, **kwargs):
+        defaults = dict(lon_0=-100)
+        setdefaults(kwargs,defaults)
+        super(BlissSkymap,self).__init__(*args, **kwargs)
+
+    def create_tick_formatter(self):
+        return ZoomFormatter360()
+        

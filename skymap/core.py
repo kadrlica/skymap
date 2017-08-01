@@ -19,8 +19,20 @@ import scipy.ndimage as nd
 from skymap.utils import setdefaults,get_datadir
 from skymap.utils import cel2gal, gal2cel
 
+
 class Skymap(Basemap):
     """ Skymap base class. """
+
+    COLORS = odict([
+            ('none','black'),
+            ('u','blue'),
+            ('g','green'),
+            ('r','red'),
+            ('i','#EAC117'),
+            ('z','darkorchid'),
+            ('Y','black'),
+            ('VR','gray'),
+            ])
 
     def __init__(self, *args, **kwargs):
         self.set_observer(kwargs.pop('observer',None))
@@ -33,6 +45,7 @@ class Skymap(Basemap):
 
         self.draw_parallels()
         self.draw_meridians()
+        self.wrap_angle = 180
 
     def set_observer(self, observer):
         observer = ephem.Observer(observer) if observer else ephem.Observer()
@@ -87,12 +100,22 @@ class Skymap(Basemap):
 
     @staticmethod
     def roll(ra,dec,wrap=180.):
-        """ Roll an ra,dec combination to split 180 boundary """
+        """ Roll an ra,dec combination to split 180 boundary 
+        Parameters:
+        -----------
+        ra : right ascension (deg)
+        dec: declination (deg)
+        wrap_angle : angle to wrap at (deg)
+        """
+        ra = np.atleast_1d(ra)
+        dec = np.atleast_1d(dec)
+        # Find the index of the entry closest to the wrap angle
         idx = np.abs(ra - wrap).argmin()
         if idx+1 == len(ra): idx = 0
         elif (ra[idx] == wrap): idx += 1
         elif (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
         elif (ra[idx]>wrap) and (ra[idx+1]<wrap): idx += 1
+        else: idx = 0
 
         return np.roll(ra,-idx), np.roll(dec,-idx)
 
@@ -105,7 +128,7 @@ class Skymap(Basemap):
         self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
 
     def draw_polygon_radec(self,ra,dec,**kwargs):
-        xy = self.proj(*self.roll(ra,dec))
+        xy = self.proj(*self.roll(ra,dec,self.wrap_angle))
         self.plot(*xy,**kwargs)
 
     def draw_zenith(self, radius=1.0, **kwargs):
@@ -209,12 +232,17 @@ class Skymap(Basemap):
 
     def draw_fields(self,fields,**kwargs):
         defaults = dict(edgecolor='none',s=15)
+        # case insensitive without changing input array
+        names = dict([(n.lower(),n) for n in fields.dtype.names])
+
         if self.projection == 'ortho': defaults.update(s=50)
-        if 'FILTER' in fields.dtype.names:
-            colors = [COLORS[b] for b in fields['FILTER']]
-        defaults.update(c=colors)
+        if 'filter' in names:
+            colors = [self.COLORS[b] for b in fields[names['filter']]]
+            defaults.update(c=colors)
+
         setdefaults(kwargs,defaults)
-        self.scatter(*self.proj(fields['RA'],fields['DEC']),**kwargs)
+        ra,dec = fields[names['ra']],fields[names['dec']]
+        self.scatter(*self.proj(ra,dec),**kwargs)
 
     def draw_hist2d(self, lon, lat, nside=256, **kwargs):
         """
@@ -243,9 +271,23 @@ class Skymap(Basemap):
 
         return hpxmap,self.draw_hpxmap(hpxmap,**kwargs)
 
+    def map_range(self, hpxmap):
+        nside = hp.get_nside(hpxmap.data)
+                
+        ipring,=np.where(hpxmap.data > hp.UNSEEN)
+        thetaMap,phiMap = hp.pix2ang(nside, ipring)
+        lonMap = np.degrees(phiMap)
+        latMap = 90.0-np.degrees(thetaMap)
+        hi,=np.where(lonMap > 180.0)  # FIXME
+        lonMap[hi] -= 360.0
+
+        return (lonMap.min(),lonMap.max()), (latMap.min(),latMap.max())
+
     def hpx2xy(self, hpxmap, xsize=800, lonra=[0.,360.], latra=[-90,90]):
-        lon = np.linspace(lonra[0],lonra[1], xsize+1)
-        lat = np.linspace(latra[0],latra[1], xsize+1)
+        #lon = np.linspace(lonra[0],lonra[1], xsize+1)
+        #lat = np.linspace(latra[0],latra[1], xsize+1)
+        lon = np.linspace(lonra[0],lonra[1], xsize)
+        lat = np.linspace(latra[0],latra[1], xsize)
         lon, lat = np.meshgrid(lon, lat)
 
         if isinstance(hpxmap,np.ma.MaskedArray):
@@ -258,7 +300,7 @@ class Skymap(Basemap):
         except TypeError:
             pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
 
-        pix = pix[:-1,:-1]
+        #pix = pix[:-1,:-1]
         values = hpxmap[pix]
         return lon,lat,values
 
@@ -270,7 +312,7 @@ class Skymap(Basemap):
             mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
             hpxmap = np.ma.MaskedArray(hpxmap,mask=mask)
 
-        vmin,vmax = np.percentile(hpxmap.compressed(),[0.1,99.9])
+        vmin,vmax = np.percentile(hpxmap.compressed(),[2.5,97.5])
 
         defaults = dict(latlon=True, rasterized=True, vmin=vmin, vmax=vmax)
         setdefaults(kwargs,defaults)
@@ -394,6 +436,42 @@ class Skymap(Basemap):
         out = np.clip(out,0.0,1.0)
         return out
    
+    def draw_inset_colorbar(self,format=None,label=None):
+        """ Draw an inset colorbar. """
+        ax = plt.gca()
+        im = plt.gci()
+        cax = inset_axes(ax, width="25%", height="5%", loc=7,
+                         bbox_to_anchor=(0.,-0.04,1,1),
+                         bbox_transform=ax.transAxes
+                         )
+        cmin,cmax = im.get_clim()
+        cmed = (cmax+cmin)/2.
+        delta = (cmax-cmin)/10.
+
+        ticks = np.array([cmin+delta,cmed,cmax-delta])
+        tmin = np.min(np.abs(ticks[0]))
+        tmax = np.max(np.abs(ticks[1]))
+
+        if format is None:
+            if (tmin < 1e-2) or (tmax > 1e3):
+                format = '%.1e'
+            elif (tmin > 0.1) and (tmax < 100):
+                format = '%.1f'
+            elif (tmax > 100):
+                format = '%i'
+            else:
+                format = '%.2g'
+                #format = '%.2f'
+
+        kwargs = dict(format=format,ticks=ticks,orientation='horizontal')
+        cbar = plt.colorbar(cax=cax,**kwargs)
+        cax.xaxis.set_ticks_position('top')
+        cax.tick_params(axis='x', labelsize=10)
+        if label is not None: 
+            cbar.set_label(label,size=10)
+            cax.xaxis.set_label_position('top')
+        plt.sca(ax)
+        return cbar,cax
 
 class McBrydeSkymap(Skymap):
     def __init__(self,*args,**kwargs):
