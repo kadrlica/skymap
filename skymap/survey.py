@@ -192,7 +192,7 @@ class SurveyZoom(SurveyMcBryde):
         ax.set_ylim(min(y),max(y))
         ax.grid(True,linestyle=':',color='k',lw=0.5)
 
-        # The aspect ratio of the zoom in will be:
+        # Fix the aspect ratio for full-sky projections
         if self.fix_aspect:
             ax.set_aspect('equal',anchor=self.anchor)
         else:
