@@ -142,15 +142,12 @@ class SurveyOrtho(SurveySkymap,OrthoSkymap): pass
 
 class ZoomFormatter(angle_helper.FormatterDMS):
     def _wrap_angle(self, angle):
-        print angle
         return angle
 
     def __call__(self, direction, factor, values):
         values = np.asarray(values)
-        #ss = np.where(values>=0, 1, -1)
         values = self._wrap_angle(values)
         ticks = [self.fmt_d % (int(v),) for v in values]
-        #print ticks
         return ticks
 
 class ZoomFormatter360(ZoomFormatter):
