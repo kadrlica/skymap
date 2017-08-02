@@ -18,9 +18,11 @@ setup(
         'matplotlib',
         'numpy',
         'scipy',
-        'basemap',
+        'basemap = 1.0.7 ', # Can we upgrade this?
         'ephem',
-        'healpy'
+        'healpy > 1.10.2', # This is required for `lonlat` argument
+        'astropy',
+        'pandas',
     ],
     packages=['skymap'],
     package_data={'skymap':['data/*.txt']},
