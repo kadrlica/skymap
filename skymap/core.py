@@ -15,7 +15,6 @@ import numpy as np
 import ephem
 import healpy as hp
 import scipy.ndimage as nd
-import pandas as pd
 
 from skymap.utils import setdefaults,get_datadir
 from skymap.utils import cel2gal, gal2cel
