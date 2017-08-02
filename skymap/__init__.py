@@ -11,4 +11,8 @@ del get_versions
 
 from skymap.core import Skymap, McBrydeSkymap, OrthoSkymap
 from skymap.survey import SurveySkymap,SurveyMcBryde,SurveyOrtho
-from skymap.survey import DESSkymap
+from skymap.survey import DESSkymap, BlissSkymap
+
+import warnings
+from matplotlib.cbook import MatplotlibDeprecationWarning
+warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)

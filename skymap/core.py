@@ -15,10 +15,16 @@ import numpy as np
 import ephem
 import healpy as hp
 import scipy.ndimage as nd
+import pandas as pd
 
 from skymap.utils import setdefaults,get_datadir
 from skymap.utils import cel2gal, gal2cel
+from skymap import healpix
 
+# TODO:
+# - abstract interface between new and old healpy pixfuncs
+# - abstract wrapper around pixfuncs for masked and unmasked arrays
+# - abstract function for coordinate wrapping
 
 class Skymap(Basemap):
     """ Skymap base class. """
@@ -313,38 +319,19 @@ class Skymap(Basemap):
 
         return hpxmap,self.draw_hpxmap(hpxmap,**kwargs)
 
-    def map_range(self, hpxmap):
-        nside = hp.get_nside(hpxmap.data)
-                
-        ipring,=np.where(hpxmap.data > hp.UNSEEN)
-        thetaMap,phiMap = hp.pix2ang(nside, ipring)
-        lonMap = np.degrees(phiMap)
-        latMap = 90.0-np.degrees(thetaMap)
-        hi,=np.where(lonMap > 180.0)  # FIXME
-        lonMap[hi] -= 360.0
+    def get_map_range(self, hpxmap, pixel=None, nside=None):
+        """ Calculate the longitude and latitude range for an implicit map. """
+        return healpix.get_map_range(hpxmap,pixel,nside,wrap_angle=self.wrap_angle)
 
-        return (lonMap.min(),lonMap.max()), (latMap.min(),latMap.max())
+    def hpx2xy(self, hpxmap, pixel=None, nside=None, xsize=800,
+               lonra=None, latra=None):
+        """ Convert from healpix map to longitude and latitude coordinates """
+        return healpix.hpx2xy(hpxmap,pixel=pixel,nside=nside,
+                              xsize=xsize,aspect=self.aspect,
+                              lonra=lonra,latra=latra)
 
-    def hpx2xy(self, hpxmap, xsize=800, lonra=[0.,360.], latra=[-90,90]):
-        lon = np.linspace(lonra[0],lonra[1], xsize)
-        lat = np.linspace(latra[0],latra[1], int(self.aspect*xsize))
-        lon, lat = np.meshgrid(lon, lat)
-
-        if isinstance(hpxmap,np.ma.MaskedArray):
-            nside = hp.get_nside(hpxmap.data)
-        else:
-            nside = hp.get_nside(hpxmap)
-        
-        try:
-            pix = hp.ang2pix(nside,lon,lat,lonlat=True)
-        except TypeError:
-            pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
-
-        #pix = pix[:-1,:-1]
-        values = hpxmap[pix]
-        return lon,lat,values
-
-    def draw_hpxmap(self, hpxmap, xsize=800, **kwargs):
+    def draw_hpxmap(self, hpxmap, pixel=None, nside=None, xsize=800,
+                    lonra=None, latra=None, **kwargs):
         """
         Use pcolormesh to draw healpix map
         """
@@ -352,37 +339,25 @@ class Skymap(Basemap):
             mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
             hpxmap = np.ma.MaskedArray(hpxmap,mask=mask)
 
+        if pixel is None:
+            nside = hp.get_nside(hpxmap.data)
+            pixel = np.arange(len(hpxmap),dtype=int)
+
         vmin,vmax = np.percentile(hpxmap.compressed(),[2.5,97.5])
 
         defaults = dict(latlon=True, rasterized=True, vmin=vmin, vmax=vmax)
         setdefaults(kwargs,defaults)
 
-        ax = plt.gca()
+        lon,lat,values = healpix.hpx2xy(hpxmap,pixel=pixel,nside=nside,
+                                        xsize=xsize,
+                                        lonra=lonra,latra=latra)
 
-        #lon = np.linspace(0, 360., xsize)
-        #lat = np.linspace(-90., 90., xsize)
-        #lon, lat = np.meshgrid(lon, lat)
-        # 
-        #nside = hp.get_nside(hpxmap.data)
-        #try:
-        #    pix = hp.ang2pix(nside,lon,lat,lonlat=True)
-        #except TypeError:
-        #    pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
-        # 
-        #values = hpxmap[pix]
-
-        lonra = [-180.,180.]
-        latra = [-90.,90]
-        lon,lat,values = self.hpx2xy(hpxmap,lonra=lonra,latra=latra,xsize=xsize)
-
-        #mask = ((values == hp.UNSEEN) | (~np.isfinite(values)))
-        #values = np.ma.array(values,mask=mask)
-        if self.projection is 'ortho':
+        if self.projection == 'ortho':
             im = self.pcolor(lon,lat,values,**kwargs)
         else:
-            im = self.pcolormesh(lon,lat,values,**kwargs)
+            im = self.pcolormesh(lon,lat,values.data,**kwargs)
 
-        return im
+        return im,lon,lat,values
 
     def draw_hpxmap_rgb(self, r, g, b, xsize=800, **kwargs):
         hpxmap = np.array([r,g,b])
