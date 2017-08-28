@@ -354,7 +354,9 @@ class Skymap(Basemap):
         if self.projection == 'ortho':
             im = self.pcolor(lon,lat,values,**kwargs)
         else:
-            im = self.pcolormesh(lon,lat,values.data,**kwargs)
+            # Why were we plotting the values.data?
+            #im = self.pcolormesh(lon,lat,values.data,**kwargs)
+            im = self.pcolormesh(lon,lat,values,**kwargs)
 
         return im,lon,lat,values
 

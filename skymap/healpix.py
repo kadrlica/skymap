@@ -8,7 +8,7 @@ import healpy as hp
 import pandas as pd
 
 def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
-    """ Calculate the longitude and latitude range for an implicit map. """
+    """ Calculate the longitude and latitude range for a map. """
     if isinstance(hpxmap,np.ma.MaskedArray):
         hpxmap = hpxmap.data
 
@@ -37,7 +37,7 @@ def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
 
 def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
            lonra=None, latra=None):
-    """ Convert a healpix map into x,y pixels """
+    """ Convert a healpix map into x,y pixels and values"""
     if lonra is None and latra is None:
         lonra,latra = get_map_range(hpxmap,pixel,nside)
     elif (lonra is None) or (latra is None):
@@ -65,7 +65,8 @@ def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
         # Things get fancy here...
         # Match the arrays on the pixel index
         pixel_df = pd.DataFrame({'pix':pixel,'idx':np.arange(len(pixel))})
-        pix_df = pd.DataFrame({'pix':pix.flat})
+        # Pandas warns about type comparison (probably doesn't like `pix.flat`)...
+        pix_df = pd.DataFrame({'pix':pix.flat},dtype=int)
         idx = pix_df.merge(pixel_df,on='pix',how='left')['idx'].values
         mask = np.isnan(idx)
 
