@@ -7,14 +7,17 @@ from os.path import expandvars
 import logging
 from collections import OrderedDict as odict
 
-from mpl_toolkits.basemap import Basemap
-from mpl_toolkits.basemap import pyproj
+
 import matplotlib
 import pylab as plt
 import numpy as np
 import ephem
 import healpy as hp
 import scipy.ndimage as nd
+
+from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.basemap import pyproj
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from skymap.utils import setdefaults,get_datadir
 from skymap.utils import cel2gal, gal2cel
@@ -451,9 +454,8 @@ class Skymap(Basemap):
         out /= norm
         out = np.clip(out,0.0,1.0)
         return out
-   
-    def draw_inset_colorbar(self,format=None,label=None):
-        """ Draw an inset colorbar. """
+
+    def draw_inset_colorbar(self,format=None,label=None,ticks=None):
         ax = plt.gca()
         im = plt.gci()
         cax = inset_axes(ax, width="25%", height="5%", loc=7,
@@ -464,7 +466,9 @@ class Skymap(Basemap):
         cmed = (cmax+cmin)/2.
         delta = (cmax-cmin)/10.
 
-        ticks = np.array([cmin+delta,cmed,cmax-delta])
+        if not ticks:
+            ticks = np.array([cmin+delta,cmed,cmax-delta])
+
         tmin = np.min(np.abs(ticks[0]))
         tmax = np.max(np.abs(ticks[1]))
 
@@ -480,12 +484,26 @@ class Skymap(Basemap):
                 #format = '%.2f'
 
         kwargs = dict(format=format,ticks=ticks,orientation='horizontal')
+
+        if format == 'custom':
+            ticks = np.array([cmin,0.85*cmax])
+            kwargs.update(format='%.0e',ticks=ticks)
+
         cbar = plt.colorbar(cax=cax,**kwargs)
         cax.xaxis.set_ticks_position('top')
-        cax.tick_params(axis='x', labelsize=10)
-        if label is not None: 
-            cbar.set_label(label,size=10)
+        cax.tick_params(axis='x', labelsize=11)
+
+        if format == 'custom':
+            ticklabels = cax.get_xticklabels()
+            for i,l in enumerate(ticklabels):
+                val,exp = ticklabels[i].get_text().split('e')
+                ticklabels[i].set_text(r'$%s \times 10^{%i}$'%(val,int(exp)))
+            cax.set_xticklabels(ticklabels)
+
+        if label is not None:
+            cbar.set_label(label,size=11)
             cax.xaxis.set_label_position('top')
+
         plt.sca(ax)
         return cbar,cax
 
