@@ -41,8 +41,8 @@ def get_config():
     cfg.VCS = "git"
     cfg.style = "pep440"
     cfg.tag_prefix = "v"
-    cfg.parentdir_prefix = "skymapy-"
-    cfg.versionfile_source = "skymapy/_version.py"
+    cfg.parentdir_prefix = "skymap-"
+    cfg.versionfile_source = "skymap/_version.py"
     cfg.verbose = False
     return cfg
 
