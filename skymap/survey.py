@@ -140,6 +140,17 @@ class SurveySkymap(Skymap):
 class SurveyMcBryde(SurveySkymap,McBrydeSkymap): pass
 class SurveyOrtho(SurveySkymap,OrthoSkymap): pass
 
+# Original DES Formatter
+# ADW: Why doesn't ZoomFormatter180 work?
+class ZoomFormatterDES(angle_helper.FormatterDMS):
+
+    def __call__(self, direction, factor, values):
+        values = np.asarray(values)
+        ss = np.where(values>=0, 1, -1)
+        values = np.mod(np.abs(values),360)
+        values -= 360*(values > 180)
+        return [self.fmt_d % (s*int(v),) for (s, v) in zip(ss, values)]
+
 class ZoomFormatter(angle_helper.FormatterDMS):
     def _wrap_angle(self, angle):
         return angle
@@ -260,12 +271,13 @@ class DESSkymap(SurveyZoom):
     FIGSIZE=(8,5)
 
     def __init__(self, *args, **kwargs):
-        defaults = dict(lon_0=0)
+        defaults = dict(lon_0=0,celestial=True)
         setdefaults(kwargs,defaults)
         super(DESSkymap,self).__init__(*args, **kwargs)
 
     def create_tick_formatter(self):
-        return ZoomFormatter180()
+        return ZoomFormatterDES()
+        #return ZoomFormatter180()
 
 class BlissSkymap(SurveyZoom):
     """Class for plotting a zoom on BLISS. This is relatively inflexible."""
