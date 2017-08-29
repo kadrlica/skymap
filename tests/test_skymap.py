@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Generic python script.
+Unit tests for skymap
 """
 __author__ = "Alex Drlica-Wagner"
 

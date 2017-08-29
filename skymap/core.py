@@ -518,7 +518,9 @@ class OrthoSkymap(Skymap):
         self.set_observer(kwargs.pop('observer',None))
         self.set_date(kwargs.pop('date',None))
 
-        defaults = dict(projection='ortho',lon_0=self.get_zenith(),
+        # To get oriented on zenith:
+        #lon_0=self.get_zenith()
+        defaults = dict(projection='ortho',lon_0=0,
                         lat_0=self.observer.lat)
         setdefaults(kwargs,defaults)
 
