@@ -95,6 +95,7 @@ class TestSkymap(unittest.TestCase):
         pixels = skymap.healpix.ang2disc(nside,ra,dec,radius)
         values = pixels
 
+        plt.figure()
         # Use the Cassini projection (because we can)
         m = Skymap(projection='cass', lon_0=ra, lat_0=dec, celestial=False,
                    llcrnrlon=ra+2*radius,urcrnrlon=ra-2*radius,
@@ -114,6 +115,7 @@ class TestSkymap(unittest.TestCase):
         radius = 1.5
         delta = 1.0
 
+        plt.figure()
         # Use the Cassini projection (because we can)
         m = Skymap(projection='cass', lon_0=ra, lat_0=dec, celestial=False,
                    llcrnrlon=ra+2*radius,urcrnrlon=ra-2*radius,
