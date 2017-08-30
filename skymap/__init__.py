@@ -13,10 +13,6 @@ from skymap.core import Skymap, McBrydeSkymap, OrthoSkymap
 from skymap.survey import SurveySkymap,SurveyMcBryde,SurveyOrtho
 from skymap.survey import DESSkymap, BlissSkymap
 
-def get_datadir():
-    from os.path import abspath,dirname,join
-    return join(dirname(abspath(__file__)),'data')
-
 import warnings
 from matplotlib.cbook import MatplotlibDeprecationWarning
 warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
