@@ -49,7 +49,7 @@ class Skymap(Basemap):
         defaults = dict(celestial=True,rsphere=1.0)
         setdefaults(kwargs,defaults)
 
-        super(Skymap,self).__init__(self,*args,**kwargs)
+        super(Skymap,self).__init__(*args,**kwargs)
 
         self.draw_parallels()
         self.draw_meridians()
@@ -294,9 +294,11 @@ class Skymap(Basemap):
         ra,dec = fields[names['ra']],fields[names['dec']]
         self.scatter(*self.proj(ra,dec),**kwargs)
 
-    def draw_hist2d(self, lon, lat, nside=256, **kwargs):
+    def draw_hpxbin(self, lon, lat, nside=256, **kwargs):
         """
-        Draw a 2d histogram of coordinantes x,y.
+        Create a healpix histogram of the counts.
+
+        Like `hexbin` from matplotlib
 
         Parameters:
         -----------
@@ -335,7 +337,7 @@ class Skymap(Basemap):
     def draw_hpxmap(self, hpxmap, pixel=None, nside=None, xsize=800,
                     lonra=None, latra=None, **kwargs):
         """
-        Use pcolormesh to draw healpix map
+        Use pcolor/pcolormesh to draw healpix map.
         """
         if not isinstance(hpxmap,np.ma.MaskedArray):
             mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
@@ -344,6 +346,9 @@ class Skymap(Basemap):
         if pixel is None:
             nside = hp.get_nside(hpxmap.data)
             pixel = np.arange(len(hpxmap),dtype=int)
+        elif nside is None:
+            msg = "'nside' must be specified for explicit maps"
+            raise Exception(msg)
 
         vmin,vmax = np.percentile(hpxmap.compressed(),[2.5,97.5])
 
@@ -353,6 +358,10 @@ class Skymap(Basemap):
         lon,lat,values = healpix.hpx2xy(hpxmap,pixel=pixel,nside=nside,
                                         xsize=xsize,
                                         lonra=lonra,latra=latra)
+
+        #xx,yy = np.meshgrid(np.linspace(10,12),np.linspace(10,12))
+        #xx,yy = np.meshgrid(np.linspace(10,12,len(lon)),np.linspace(10,12,len(lat)))
+        #import pdb; pdb.set_trace()
 
         if self.projection == 'ortho':
             im = self.pcolor(lon,lat,values,**kwargs)
@@ -420,6 +429,7 @@ class Skymap(Basemap):
         return im
 
     def draw_focal_planes(self, ra, dec, **kwargs):
+        from skymap.instrument.decam import DECamFocalPlane
         defaults = dict(alpha=0.2,color='red',edgecolors='none',lw=0)
         setdefaults(kwargs,defaults)
         ra,dec = np.atleast_1d(ra,dec)
