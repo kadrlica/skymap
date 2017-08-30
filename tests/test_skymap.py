@@ -110,7 +110,7 @@ class TestSkymap(unittest.TestCase):
 
 
     def test_draw_focal_planes(self):
-        """ Draw a partial healpix map with very large nside """
+        """ Draw a DECam focal planes """
         ra,dec = 45,-45
         radius = 1.5
         delta = 1.0
