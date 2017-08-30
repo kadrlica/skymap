@@ -97,9 +97,8 @@ class TestSkymap(unittest.TestCase):
 
         # Use the Cassini projection (because we can)
         m = Skymap(projection='cass', lon_0=ra, lat_0=dec, celestial=False,
-                   llcrnrlon=ra-2*radius,urcrnrlon=ra+2*radius,
-                   llcrnrlat=dec-2*radius,urcrnrlat=dec+2*radius,
-        )
+                   llcrnrlon=ra+2*radius,urcrnrlon=ra-2*radius,
+                   llcrnrlat=dec-2*radius,urcrnrlat=dec+2*radius)
 
         m.draw_hpxmap(values,pixels,nside=nside,xsize=400)
         m.draw_parallels(np.linspace(dec-2*radius,dec+2*radius,5),
@@ -118,8 +117,7 @@ class TestSkymap(unittest.TestCase):
         # Use the Cassini projection (because we can)
         m = Skymap(projection='cass', lon_0=ra, lat_0=dec, celestial=False,
                    llcrnrlon=ra+2*radius,urcrnrlon=ra-2*radius,
-                   llcrnrlat=dec-2*radius,urcrnrlat=dec+2*radius,
-        )
+                   llcrnrlat=dec-2*radius,urcrnrlat=dec+2*radius)
 
         # Can plot individual fields
         m.draw_focal_planes([ra+delta/2],[dec-delta/2],color='g')
