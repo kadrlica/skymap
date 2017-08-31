@@ -36,7 +36,7 @@ class TestSkymap(unittest.TestCase):
             plt.figure()
             m = cls()
             m.draw_milky_way()
-            plt.title('Milky Way (%s)'%cls.__name__)
+            plt.title('Galactic Plane (%s)'%cls.__name__)
 
     def test_survey_skymap(self):
         for cls in SURVEYS:
@@ -54,7 +54,7 @@ class TestSkymap(unittest.TestCase):
             m.draw_des()
             m.draw_maglites()
             m.draw_bliss()
-            plt.title('Zoom Footprints (%s)'%cls.__name__)
+            plt.suptitle('Zoom Footprints (%s)'%cls.__name__)
 
     def test_draw_hpxmap(self):
         """ Test drawing a full healpix skymap """
@@ -131,6 +131,24 @@ class TestSkymap(unittest.TestCase):
         m.draw_meridians(np.linspace(ra-2*radius,ra+2*radius,5),
                          labelstyle='+/-',labels=[0,0,0,1])
         plt.title('DECam Focal Planes')
+
+    def test_zoom_to_fit(self):
+        nside = 64
+        ra,dec = 15,-45
+        radius = 10.0
+        pixels = skymap.healpix.ang2disc(nside,ra,dec,radius)
+        values = pixels
+
+        for cls in SKYMAPS:
+            plt.figure()
+            m = cls()
+            m.draw_hpxmap(values,pixels,nside=nside,xsize=200)
+            m.zoom_to_fit(values,pixels,nside)
+            m.draw_parallels(np.linspace(dec-2*radius,dec+2*radius,5),
+                             labelstyle='+/-',labels=[1,0,0,0])
+            m.draw_meridians(np.linspace(ra-2*radius,ra+2*radius,5),
+                             labelstyle='+/-',labels=[0,0,0,1])
+            plt.title('Zoom to Fit (%s)'%cls.__name__)
 
 
 if __name__ == '__main__':
