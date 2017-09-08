@@ -66,7 +66,8 @@ class Skymap(Basemap):
 
     def draw_parallels(self,*args,**kwargs):
         defaults = dict(labels=[1,0,0,1],labelstyle='+/-')
-        if not args: defaults.update(circles=np.arange(-90,120,30))
+        if not args:
+            defaults.update(circles=np.arange(-90,120,30))
         if self.projection in ['ortho','geos','nsper','aeqd']:
             defaults.update(labels=[0,0,0,0])
         setdefaults(kwargs,defaults)
@@ -164,11 +165,17 @@ class Skymap(Basemap):
         dec = np.atleast_1d(dec)
         # Find the index of the entry closest to the wrap angle
         idx = np.abs(ra - wrap).argmin()
-        if idx+1 == len(ra): idx = 0
+        # First or last index: ignore
+        if idx == 0 or idx+1 == len(ra): return ra, dec
+        # Value exactly equals wrap, choose next value
         elif (ra[idx] == wrap): idx += 1
+        # Wrap angle sandwiched
         elif (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
+        elif (ra[idx]<wrap) and (ra[idx-1]>wrap): idx += 0
         elif (ra[idx]>wrap) and (ra[idx+1]<wrap): idx += 1
-        else: idx = 0
+        elif (ra[idx]>wrap) and (ra[idx-1]<wrap): idx += 0
+        # There is no wrap: ignore
+        else: return ra, dec
 
         return np.roll(ra,-idx), np.roll(dec,-idx)
 
@@ -237,7 +244,7 @@ class Skymap(Basemap):
 
         glon = np.linspace(0,360,500)
         glat = np.zeros_like(glon)
-        ra,dec = self.roll(*gal2cel(glon,glat))
+        ra,dec = self.roll(*gal2cel(glon,glat),wrap=self.wrap_angle)
         ra -= 360*(ra > 180)
 
         self.draw_polygon_radec(ra,dec,**kwargs)
@@ -365,10 +372,6 @@ class Skymap(Basemap):
         lon,lat,values = healpix.hpx2xy(hpxmap,pixel=pixel,nside=nside,
                                         xsize=xsize,
                                         lonra=lonra,latra=latra)
-
-        #xx,yy = np.meshgrid(np.linspace(10,12),np.linspace(10,12))
-        #xx,yy = np.meshgrid(np.linspace(10,12,len(lon)),np.linspace(10,12,len(lat)))
-        #import pdb; pdb.set_trace()
 
         if self.projection == 'ortho':
             im = self.pcolor(lon,lat,values,**kwargs)
@@ -523,6 +526,17 @@ class Skymap(Basemap):
 
         plt.sca(ax)
         return cbar,cax
+
+    def zoom_to_fit(self, hpxmap, pixel=None, nside=None):
+        ax = plt.gca()
+        (lonmin,lonmax), (latmin,latmax) = self.get_map_range(hpxmap, pixel, nside)
+        self.llcrnrx,self.llcrnry = self(lonmin,latmin)
+        self.urcrnrx,self.urcrnry = self(lonmax,latmax)
+
+        ax.set_xlim(self.llcrnrx,self.urcrnrx)
+        ax.set_ylim(self.llcrnry,self.urcrnry)
+
+        self.set_axes_limits(ax=ax)
 
 class McBrydeSkymap(Skymap):
     defaults = dict(projection='mbtfpq',lon_0=0,lat_0=0,celestial=True)

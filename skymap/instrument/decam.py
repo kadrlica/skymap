@@ -21,7 +21,7 @@ class DECamFocalPlane(object):
         self.ccd_dict = eval(''.join(open(self.filename).readlines()))
 
         # These are x,y coordinates
-        self.corners = np.array(self.ccd_dict.values())
+        self.corners = np.array(list(self.ccd_dict.values()))
 
         # Since we don't know the original projection of the DECam
         # focal plane into x,y it is probably not worth trying to

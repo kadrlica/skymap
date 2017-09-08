@@ -284,9 +284,9 @@ class BlissSkymap(SurveyZoom):
     # RA, DEC frame limits
     FRAME = [[130,130,0,0],[-5,-55,-5,-55]]
     FIGSIZE = (12,3)
-
     defaults = dict(lon_0=-100)
-        
+    wrap_angle = 60
+
     def __init__(self, *args, **kwargs):
         setdefaults(kwargs,self.defaults)
         super(BlissSkymap,self).__init__(*args, **kwargs)
