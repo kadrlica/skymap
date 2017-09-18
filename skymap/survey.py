@@ -286,13 +286,22 @@ class BlissSkymap(SurveyZoom):
     # RA, DEC frame limits
     FRAME = [[130,130,0,0],[-5,-55,-5,-55]]
     FIGSIZE = (12,3)
+    defaults = dict(lon_0=-100)
     wrap_angle = 60
 
     def __init__(self, *args, **kwargs):
-        defaults = dict(lon_0=-100)
-        setdefaults(kwargs,defaults)
+        setdefaults(kwargs,self.defaults)
         super(BlissSkymap,self).__init__(*args, **kwargs)
 
     def create_tick_formatter(self):
         return ZoomFormatter360()
         
+class MaglitesSkymap(SurveyOrtho):
+    defaults = dict(SurveyOrtho.defaults,lat_0=-90)
+
+    def draw_meridians(self,*args,**kwargs):
+        defaults = dict(labels=[1,1,1,1],fontsize=14,labelstyle='+/-')
+        setdefaults(kwargs,defaults)
+        cardinal = kwargs.pop('cardinal',False)
+        meridict = super(OrthoSkymap,self).draw_meridians(*args,**kwargs)
+        return meridict

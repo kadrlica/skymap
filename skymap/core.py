@@ -42,12 +42,13 @@ class Skymap(Basemap):
             ('VR','gray'),
             ])
 
+    defaults = dict(celestial=True,rsphere=1.0)
+
     def __init__(self, *args, **kwargs):
         self.set_observer(kwargs.pop('observer',None))
         self.set_date(kwargs.pop('date',None))
 
-        defaults = dict(celestial=True,rsphere=1.0)
-        setdefaults(kwargs,defaults)
+        setdefaults(kwargs,self.defaults)
 
         super(Skymap,self).__init__(*args,**kwargs)
 
@@ -76,8 +77,9 @@ class Skymap(Basemap):
         defaults = dict(labels=[1,0,0,1],labelstyle='+/-')
         if self.projection in ['ortho','geos','nsper','aeqd']:
             defaults.update(labels=[0,0,0,0])
-        if not args:
-            defaults.update(meridians=np.arange(0,420,60))
+        if not args: 
+            #defaults.update(meridians=np.arange(0,420,60))
+            defaults.update(meridians=np.arange(0,360,60))
         setdefaults(kwargs,defaults)
         return self.drawmeridians(*args,**kwargs)
 
@@ -297,6 +299,7 @@ class Skymap(Basemap):
                  fontsize=8, ha='center', va='center', color='k')
 
     def draw_fields(self,fields,**kwargs):
+        # Scatter point size is figsize dependent...
         defaults = dict(edgecolor='none',s=15)
         # case insensitive without changing input array
         names = dict([(n.lower(),n) for n in fields.dtype.names])
@@ -304,6 +307,9 @@ class Skymap(Basemap):
         if self.projection == 'ortho': defaults.update(s=50)
         if 'filter' in names:
             colors = [self.COLORS[b] for b in fields[names['filter']]]
+            defaults.update(c=colors)
+        elif 'band' in names:
+            colors = [self.COLORS[b] for b in fields[names['band']]]
             defaults.update(c=colors)
 
         setdefaults(kwargs,defaults)
@@ -541,21 +547,24 @@ class Skymap(Basemap):
         self.set_axes_limits(ax=ax)
 
 class McBrydeSkymap(Skymap):
+    defaults = dict(projection='mbtfpq',lon_0=0,lat_0=0,celestial=True)
+
     def __init__(self,*args,**kwargs):
-        defaults = dict(projection='mbtfpq',lon_0=0,lat_0=0)
-        setdefaults(kwargs,defaults)
+        setdefaults(kwargs,self.defaults)
         super(McBrydeSkymap,self).__init__(*args, **kwargs)
 
 class OrthoSkymap(Skymap):
+
+    # To get oriented on zenith:
+    #lon_0=self.get_zenith(),lat_0=self.observer.lat
+
+    defaults = dict(projection='ortho',lon_0=0,lat_0=0)
+
     def __init__(self,*args,**kwargs):
         self.set_observer(kwargs.pop('observer',None))
         self.set_date(kwargs.pop('date',None))
 
-        # To get oriented on zenith:
-        #lon_0=self.get_zenith()
-        defaults = dict(projection='ortho',lon_0=0,
-                        lat_0=self.observer.lat)
-        setdefaults(kwargs,defaults)
+        setdefaults(kwargs,self.defaults)
 
         super(OrthoSkymap,self).__init__(*args, **kwargs)
 

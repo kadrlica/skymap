@@ -9,10 +9,12 @@ import unittest
 
 import matplotlib
 
-if not sys.flags.interactive:
+if not os.getenv('DISPLAY'): 
+    print("Setting backend: 'Agg'")
     matplotlib.use('Agg')
-else:
-    if not os.getenv('DISPLAY'): matplotlib.use('Agg')
+if not sys.flags.interactive:
+    print("Setting backend: 'Agg'")
+    matplotlib.use('Agg')
 
 import pylab as plt
 import numpy as np
