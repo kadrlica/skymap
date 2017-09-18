@@ -7,7 +7,6 @@ from os.path import expandvars
 import logging
 from collections import OrderedDict as odict
 
-
 import matplotlib
 import pylab as plt
 import numpy as np
@@ -287,12 +286,14 @@ class Skymap(Basemap):
         return self.draw_hpxmap(np.log10(celhpx),**kwargs)
 
     def draw_lmc(self):
+        from skymap.constants import RA_LMC, DEC_LMC, RADIUS_LMC
         proj = self.proj(RA_LMC,DEC_LMC)
         self.tissot(RA_LMC,DEC_LMC,RADIUS_LMC,100,fc='0.7',ec='0.5')
         plt.text(proj[0],proj[1], 'LMC', weight='bold',
                  fontsize=10, ha='center', va='center', color='k')
 
     def draw_smc(self):
+        from skymap.constants import RA_SMC, DEC_SMC, RADIUS_SMC
         proj = self.proj(RA_SMC,DEC_SMC)
         self.tissot(RA_SMC,DEC_SMC,RADIUS_SMC,100,fc='0.7',ec='0.5')
         plt.text(proj[0],proj[1], 'SMC', weight='bold',
