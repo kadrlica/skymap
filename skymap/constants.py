@@ -4,6 +4,8 @@ Various constants used for plotting
 """
 __author__ = "Alex Drlica-Wagner"
 
+import numpy as np
+
 # Plotting DECam
 DECAM=1.1 # DECam radius (deg)
 
