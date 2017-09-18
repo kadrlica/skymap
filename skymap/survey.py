@@ -33,10 +33,12 @@ class SurveySkymap(Skymap):
         setdefaults(kwargs,defaults)
 
         filename = os.path.join(get_datadir(),'bliss-poly.txt')
-        data = np.genfromtxt(filename,names=['ra','dec','poly'])
-        for p in np.unique(data['poly']):
-            poly = data[data['poly'] == p]
-            self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
+        self.draw_polygons(filename,**kwargs)
+
+        #data = np.genfromtxt(filename,names=['ra','dec','poly'])
+        #for p in np.unique(data['poly']):
+        #    poly = data[data['poly'] == p]
+        #    self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
 
     def draw_des(self,**kwargs):
         """ Draw the DES footprint. """

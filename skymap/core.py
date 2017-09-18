@@ -189,6 +189,14 @@ class Skymap(Basemap):
         xy = self.proj(*self.roll(ra,dec,self.wrap_angle))
         self.plot(*xy,**kwargs)
 
+    def draw_polygons(self,filename,**kwargs):
+        """Draw a text file containing multiple polygons"""
+        data = np.genfromtxt(filename,names=['ra','dec','poly'])
+        for p in np.unique(data['poly']):
+            poly = data[data['poly'] == p]
+            self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
+
+
     def draw_zenith(self, radius=1.0, **kwargs):
         """
         Plot a to-scale representation of the zenith.
