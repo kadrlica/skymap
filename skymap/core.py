@@ -8,6 +8,7 @@ import logging
 from collections import OrderedDict as odict
 
 import matplotlib
+from matplotlib import mlab
 import pylab as plt
 import numpy as np
 import ephem
@@ -197,6 +198,24 @@ class Skymap(Basemap):
             poly = data[data['poly'] == p]
             self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
 
+    def draw_paths(self,filename,**kwargs):
+        """Draw a text file containing multiple polygons"""
+        try:
+            data = np.genfromtxt(filename,names=['ra','dec','poly'])
+        except ValueError:
+            data = np.genfromtxt(filename,names=['ra','dec'])
+            data = mlab.rec_append_fields(data,'poly',np.zeros(len(data)))
+
+        for p in np.unique(data['poly']):
+            poly = data[data['poly'] == p]
+            self.draw_path_radec(poly['ra'],poly['dec'],**kwargs)
+
+    def draw_path_radec(self,ra,dec,**kwargs):
+        xy = self.proj(*self.roll(ra,dec,self.wrap_angle))
+        vertices = np.vstack(xy).T
+        path = matplotlib.path.Path(vertices)
+        patch = matplotlib.patches.PathPatch(path,**kwargs)
+        plt.gca().add_artist(patch)
 
     def draw_zenith(self, radius=1.0, **kwargs):
         """
