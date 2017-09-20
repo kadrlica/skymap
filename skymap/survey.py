@@ -6,6 +6,7 @@ import os
 
 import numpy as np
 import pylab as plt
+import pandas as pd
 
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
@@ -112,7 +113,7 @@ class SurveySkymap(Skymap):
         self.plot(ra_lo_smooth,dec_lo_smooth,latlon=True,**kwargs)
         self.plot(ra_hi_smooth,dec_hi_smooth,latlon=True,**kwargs)
 
-        orb = fileio.csv2rec(datadir+'P9_orbit_Cassini.csv')[::7]
+        orb = pd.read_csv(datadir+'P9_orbit_Cassini.csv').to_records(index=False)[::7]
         kwargs = dict(marker='o',s=40,edgecolor='none',cmap='jet_r')
         self.scatter(*self.proj(orb['ra'],orb['dec']),c=orb['cassini'],**kwargs)
 
