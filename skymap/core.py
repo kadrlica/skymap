@@ -381,16 +381,15 @@ class Skymap(Basemap):
         """
         Use pcolor/pcolormesh to draw healpix map.
         """
-        if not isinstance(hpxmap,np.ma.MaskedArray):
-            mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
-            hpxmap = np.ma.MaskedArray(hpxmap,mask=mask)
+        healpix.check_hpxmap(hpxmap,pixel,nside)
+        hpxmap = healpix.masked_array(hpxmap)
 
-        if pixel is None:
-            nside = hp.get_nside(hpxmap.data)
-            pixel = np.arange(len(hpxmap),dtype=int)
-        elif nside is None:
-            msg = "'nside' must be specified for explicit maps"
-            raise Exception(msg)
+        #if pixel is None:
+        #    nside = hp.get_nside(hpxmap.data)
+        #    pixel = np.arange(len(hpxmap),dtype=int)
+        #elif nside is None:
+        #    msg = "'nside' must be specified for explicit maps"
+        #    raise Exception(msg)
 
         vmin,vmax = np.percentile(hpxmap.compressed(),[2.5,97.5])
 
@@ -401,6 +400,7 @@ class Skymap(Basemap):
                                         xsize=xsize,
                                         lonra=lonra,latra=latra)
 
+        # pcolormesh doesn't work in Ortho...
         if self.projection == 'ortho':
             im = self.pcolor(lon,lat,values,**kwargs)
         else:
@@ -411,33 +411,33 @@ class Skymap(Basemap):
         return im,lon,lat,values
 
     def draw_hpxmap_rgb(self, r, g, b, xsize=800, **kwargs):
-        hpxmap = np.array([r,g,b])
-        if not isinstance(hpxmap,np.ma.MaskedArray):
-            mask = ~np.isfinite(hpxmap) | (hpxmap==hp.UNSEEN)
-            hpxmap = np.ma.MaskedArray(hpxmap,mask=mask)
+        hpxmap = healpix.masked_array(np.array([r,g,b]))
 
         vmin,vmax = np.percentile(hpxmap.compressed(),[0.1,99.9])
 
         defaults = dict(latlon=True, rasterized=True, vmin=vmin, vmax=vmax)
         setdefaults(kwargs,defaults)
 
-        ax = plt.gca()
-        lonra = [-180.,180.]
-        latra = [-90.,90]
+        #ax = plt.gca()
+        #lonra = [-180.,180.]
+        #latra = [-90.,90]
+        
+        
+        #lon = np.linspace(lonra[0], lonra[1], xsize)
+        #lat = np.linspace(latra[0], latra[1], xsize*self.aspect)
+        #lon, lat = np.meshgrid(lon, lat)
 
-        lon = np.linspace(lonra[0], lonra[1], xsize)
-        lat = np.linspace(latra[0], latra[1], xsize*self.aspect)
-        lon, lat = np.meshgrid(lon, lat)
+        #nside = hp.get_nside(hpxmap.data)
+        #try:
+        #    pix = hp.ang2pix(nside,lon,lat,lonlat=True)
+        #except TypeError:
+        #    pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
 
-        nside = hp.get_nside(hpxmap.data)
-        try:
-            pix = hp.ang2pix(nside,lon,lat,lonlat=True)
-        except TypeError:
-            pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+        lonra,latra = self.get_map_range(r)
 
-        lon,lat,R = self.hpx2xy(r,lonra=lonra,latra=latra,xsize=xsize)
-        G = self.hpx2xy(g,lonra=lonra,latra=latra,xsize=xsize)[-1]
-        B = self.hpx2xy(b,lonra=lonra,latra=latra,xsize=xsize)[-1]
+        lon, lat, R = self.hpx2xy(r,lonra=lonra,latra=latra,xsize=xsize)
+        _, _, G = self.hpx2xy(g,lonra=lonra,latra=latra,xsize=xsize)
+        _, _, B = self.hpx2xy(b,lonra=lonra,latra=latra,xsize=xsize)
 
         # Colors are all normalized to R... probably not desired...
         #norm = np.nanmax(R)
@@ -453,18 +453,20 @@ class Skymap(Basemap):
         b = self.set_scale(B,**kw)
         
         #rgb = np.array([r,g,b]).T
-        color_tuples = np.array([r.filled(np.nan).flatten(), 
-                                 g.filled(np.nan).flatten(), 
-                                 b.filled(np.nan).flatten()]).T
+        color_tuples = np.array([r[:-1,:-1].filled(np.nan).flatten(), 
+                                 g[:-1,:-1].filled(np.nan).flatten(), 
+                                 b[:-1,:-1].filled(np.nan).flatten()]).T
         color_tuples[np.where(np.isnan(color_tuples))] = 0.0
         setdefaults(kwargs,{'color':color_tuples})
-        
+
         if self.projection is 'ortho':
             im = self.pcolor(lon,lat,r,**kwargs)
         else:
             im = self.pcolormesh(lon,lat,r,**kwargs)
+        plt.gca().set_facecolor((0,0,0))
+        plt.draw()
 
-        return im
+        return im,lon,lat,r,color_tuples
 
     def draw_focal_planes(self, ra, dec, **kwargs):
         from skymap.instrument.decam import DECamFocalPlane
@@ -485,7 +487,7 @@ class Skymap(Basemap):
 
     def set_scale(self, array, log=False, sigma=1.0, norm=None):
         if isinstance(array,np.ma.MaskedArray):
-            out = copy.deepcopy(array)
+            out = np.ma.copy(array)
         else:
             out = np.ma.array(array,mask=np.isnan(array),fill_value=np.nan)
 
@@ -511,10 +513,10 @@ class Skymap(Basemap):
                          bbox_transform=ax.transAxes
                          )
         cmin,cmax = im.get_clim()
-        cmed = (cmax+cmin)/2.
-        delta = (cmax-cmin)/10.
 
-        if not ticks:
+        if (ticks is None) and (cmin is not None) and (cmax is not None):
+            cmed = (cmax+cmin)/2.
+            delta = (cmax-cmin)/10.
             ticks = np.array([cmin+delta,cmed,cmax-delta])
 
         tmin = np.min(np.abs(ticks[0]))
