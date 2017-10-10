@@ -7,8 +7,32 @@ import numpy as np
 import healpy as hp
 import pandas as pd
 
+import warnings
+warnings.simplefilter("always")
+
+def masked_array(array):
+    if isinstance(array,np.ma.MaskedArray):
+        return array
+    mask = ~np.isfinite(array) | (array==hp.UNSEEN)
+    return np.ma.MaskedArray(array,mask=mask)
+
+def check_hpxmap(hpxmap,pixel,nside):
+    if pixel is None and not hp.isnpixok(hpxmap.shape[-1]):
+        msg = "'hpxmap' has invalid dimension: %s"%(hpxmap.shape)
+        raise Exception(msg)
+
+    if pixel is not None and nside is None:
+        msg = "'nside' must be specified for explicit maps"
+        raise Exception(msg)
+
+    if pixel is not None and (hpxmap.shape != pixel.shape):
+        msg = "'hpxmap' and 'pixel' must have same shape"
+        raise Exception(msg)
+    
+    
 def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
     """ Calculate the longitude and latitude range for a map. """
+    check_hpxmap(hpxmap,pixel,nside)
     if isinstance(hpxmap,np.ma.MaskedArray):
         hpxmap = hpxmap.data
 
@@ -38,6 +62,8 @@ def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
 def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
            lonra=None, latra=None):
     """ Convert a healpix map into x,y pixels and values"""
+    check_hpxmap(hpxmap,pixel,nside)
+
     if lonra is None and latra is None:
         lonra,latra = get_map_range(hpxmap,pixel,nside)
     elif (lonra is None) or (latra is None):
@@ -54,26 +80,29 @@ def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
         else:
             nside = hp.get_nside(hpxmap)
 
+    # Old version of healpy
     try:
         pix = hp.ang2pix(nside,lon,lat,lonlat=True)
     except TypeError:
         pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
 
     if pixel is None:
-        values = hpxmap[pix]
+        values = masked_array(hpxmap[pix])
     else:
         # Things get fancy here...
         # Match the arrays on the pixel index
         pixel_df = pd.DataFrame({'pix':pixel,'idx':np.arange(len(pixel))})
-        # Pandas warns about type comparison (probably doesn't like `pix.flat`)...
-        pix_df = pd.DataFrame({'pix':pix.flat},dtype=int)
+        # Pandas warns about type comparison.
+        # It probably doesn't like `pix.flat`, but it would save space
+        #pix_df = pd.DataFrame({'pix':pix.flat},dtype=int)
+        pix_df = pd.DataFrame({'pix':pix.ravel()},dtype=int)
         idx = pix_df.merge(pixel_df,on='pix',how='left')['idx'].values
         mask = np.isnan(idx)
 
         # Index the values by the matched index
         values = np.nan*np.ones(pix.shape,dtype=hpxmap.dtype)
-        values = np.ma.array(values,mask=mask)
         values[np.where(~mask.reshape(pix.shape))] = hpxmap[idx[~mask].astype(int)]
+        values = np.ma.array(values,mask=mask)
 
     return lon,lat,values
 
