@@ -10,10 +10,10 @@ import pandas as pd
 import warnings
 warnings.simplefilter("always")
 
-def masked_array(array):
+def masked_array(array,badval=hp.UNSEEN):
     if isinstance(array,np.ma.MaskedArray):
         return array
-    mask = ~np.isfinite(array) | (array==hp.UNSEEN)
+    mask = ~np.isfinite(array) | (array==badval)
     return np.ma.MaskedArray(array,mask=mask)
 
 def check_hpxmap(hpxmap,pixel,nside):
@@ -105,6 +105,33 @@ def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
         values = np.ma.array(values,mask=mask)
 
     return lon,lat,values
+
+def pd_index_pix_in_pixels(pix,pixels):
+    pixel_df = pd.DataFrame({'pix':pixel,'idx':np.arange(len(pixel))})
+    # Pandas warns about type comparison (probably doesn't like `pix.flat`)...
+    pix_df = pd.DataFrame({'pix':pix.flat},dtype=int)
+    idx = pix_df.merge(pixel_df,on='pix',how='left')['idx'].values
+    return idx
+
+def np_index_pix_in_pixels(pix,pixels):
+    """
+    Find the indices of a set of pixels into another set of pixels
+    """
+    # Are the pixels always sorted? Is it quicker to check?
+    pixels = np.sort(pixels)
+    # Assumes that 'pixels' is pre-sorted, otherwise...???
+    index = np.searchsorted(pixels,pix)
+    if np.isscalar(index):
+        if not np.in1d(pix,pixels).any(): index = np.nan
+    else:
+        # Find objects that are outside the pixels
+        index[~np.in1d(pix,pixels)] = np.nan
+    return index
+
+def index_lonlat_in_pixels(lon,lat,pixels,nside):
+    pix = ang2pix(nside,lon,lat)
+    return index_pix_in_pixels(pix,pixels)
+
 
 def ang2disc(nside, lon, lat, radius, inclusive=False, fact=4, nest=False):
     """

@@ -377,12 +377,12 @@ class Skymap(Basemap):
                               lonra=lonra,latra=latra)
 
     def draw_hpxmap(self, hpxmap, pixel=None, nside=None, xsize=800,
-                    lonra=None, latra=None, **kwargs):
+                    lonra=None, latra=None, badval=hp.UNSEEN, **kwargs):
         """
         Use pcolor/pcolormesh to draw healpix map.
         """
         healpix.check_hpxmap(hpxmap,pixel,nside)
-        hpxmap = healpix.masked_array(hpxmap)
+        hpxmap = healpix.masked_array(hpxmap,badval)
 
         #if pixel is None:
         #    nside = hp.get_nside(hpxmap.data)
