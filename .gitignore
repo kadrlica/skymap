@@ -8,6 +8,7 @@
 *.egg-info/
 build/
 dist/
+tutorial/.ipynb_checkpoints/
 
 ### Latex
 *.fls

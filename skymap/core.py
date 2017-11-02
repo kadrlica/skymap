@@ -15,6 +15,8 @@ import ephem
 import healpy as hp
 import scipy.ndimage as nd
 
+from matplotlib.collections import LineCollection
+
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.basemap import pyproj
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -56,6 +58,8 @@ class Skymap(Basemap):
         self.draw_meridians()
         self.wrap_angle = 180
 
+        self.resolution = 'c'
+
     def set_observer(self, observer):
         observer = ephem.Observer(observer) if observer else ephem.Observer()
         self.observer = observer
@@ -67,7 +71,7 @@ class Skymap(Basemap):
     def draw_parallels(self,*args,**kwargs):
         defaults = dict(labels=[1,0,0,1],labelstyle='+/-')
         if not args:
-            defaults.update(circles=np.arange(-90,120,30))
+            defaults.update(circles=np.arange(-60,90,30))
         if self.projection in ['ortho','geos','nsper','aeqd']:
             defaults.update(labels=[0,0,0,0])
         setdefaults(kwargs,defaults)
@@ -75,9 +79,9 @@ class Skymap(Basemap):
 
     def draw_meridians(self,*args,**kwargs):
         defaults = dict(labels=[1,0,0,1],labelstyle='+/-')
-        if self.projection in ['ortho','geos','nsper','aeqd']:
+        if self.projection in ['ortho','geos','nsper','aeqd','sinu','hammer']:
             defaults.update(labels=[0,0,0,0])
-        if not args: 
+        if not args:
             #defaults.update(meridians=np.arange(0,420,60))
             defaults.update(meridians=np.arange(0,360,60))
         setdefaults(kwargs,defaults)
@@ -153,7 +157,33 @@ class Skymap(Basemap):
         return -lon_zen
 
     @staticmethod
-    def roll(ra,dec,wrap=180.):
+    def wrap_index(ra, dec, wrap=180.):
+        ra = np.atleast_1d(ra)
+        dec = np.atleast_1d(dec)
+
+        # No wrap: ignore
+        if wrap is None:  return None
+        # No array: ignore
+        if len(ra)==1 or len(dec)==1: return None
+
+        # Find the index of the entry closest to the wrap angle
+        idx = np.abs(ra - wrap).argmin()
+        # First or last index: ignore
+        if idx == 0 or idx+1 == len(ra): return None
+        # Value exactly equals wrap, choose next value
+        elif (ra[idx] == wrap): idx += 1
+        # Wrap angle sandwiched
+        elif (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
+        elif (ra[idx]<wrap) and (ra[idx-1]>wrap): idx += 0
+        elif (ra[idx]>wrap) and (ra[idx+1]<wrap): idx += 1
+        elif (ra[idx]>wrap) and (ra[idx-1]<wrap): idx += 0
+        # There is no wrap: ignore
+        else: return None
+
+        return idx
+
+    @classmethod
+    def roll(cls,ra,dec,wrap=180.):
         """ Roll an ra,dec combination to split 180 boundary 
         Parameters:
         -----------
@@ -163,21 +193,36 @@ class Skymap(Basemap):
         """
         ra = np.atleast_1d(ra)
         dec = np.atleast_1d(dec)
-        # Find the index of the entry closest to the wrap angle
-        idx = np.abs(ra - wrap).argmin()
-        # First or last index: ignore
-        if idx == 0 or idx+1 == len(ra): return ra, dec
-        # Value exactly equals wrap, choose next value
-        elif (ra[idx] == wrap): idx += 1
-        # Wrap angle sandwiched
-        elif (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
-        elif (ra[idx]<wrap) and (ra[idx-1]>wrap): idx += 0
-        elif (ra[idx]>wrap) and (ra[idx+1]<wrap): idx += 1
-        elif (ra[idx]>wrap) and (ra[idx-1]<wrap): idx += 0
-        # There is no wrap: ignore
-        else: return ra, dec
+
+        # Do nothing
+        if wrap is None: return ra,dec
+        if len(ra)==1 or len(dec)==1: return ra,dec
+
+        idx = cls.wrap_index(ra,dec,wrap)
+        if idx is None: return ra, dec
 
         return np.roll(ra,-idx), np.roll(dec,-idx)
+
+    @classmethod
+    def split(cls,ra,dec,wrap=180.):
+        """ Split an ra,dec combination into lists across a wrap boundary
+        Parameters:
+        -----------
+        ra : right ascension (deg)
+        dec: declination (deg)
+        wrap_angle : angle to wrap at (deg)
+        """
+        ra = np.atleast_1d(ra)
+        dec = np.atleast_1d(dec)
+
+        # Do nothing
+        if wrap is None: return ra,dec
+        if len(ra)==1 or len(dec)==1: return ra,dec
+
+        idx = cls.wrap_index(ra,dec,wrap)
+        if idx is None: return ra, dec
+
+        return np.split(ra,[idx]), np.split(dec,[idx])
 
     def draw_polygon(self,filename,**kwargs):
         """ Draw a polygon footprint. """
@@ -484,6 +529,67 @@ class Skymap(Basemap):
             collection = matplotlib.collections.PolyCollection(corners,**kwargs)
             ax.add_collection(collection)
         plt.draw()
+
+    # Adapted from Reed Essick
+    # https://github.com/reedessick/skymap_statistics
+
+    @classmethod
+    def read_constellations(cls):
+        import json
+        dirname  = get_datadir()
+        filename = 'constellationsANDstars.json'
+        with open(os.path.join(dirname,filename), 'r') as f:
+            data = json.load(f)
+
+        # Constellation shapes
+        shapes = []
+        for const in data['constellations'].values():
+            for shape in const:
+                shapes.append( np.degrees(shape) )
+        shapes = np.array(shapes)
+
+        # Stars
+        stars = np.array(data['stars'])
+        stars[:,:2] = np.degrees(stars[:,:2])
+
+        # Boundaries
+        boundaries = [np.degrees(e) for e in data['boundaries']]
+
+        # Centers
+        centers = data['centers']
+        for k,v in centers.items():
+            centers[k] = np.degrees(v)
+
+        return shapes, stars, boundaries, centers
+
+    def draw_constellations(self,**kwargs):
+        defaults = dict(color='k',alpha=1.0)
+        setdefaults(kwargs,defaults)
+        ax = plt.gca()
+
+        shapes, stars, boundaries, centers = self.read_constellations()
+
+        ### add constellations
+        for shape in shapes:
+            self.plot(*self.proj(*shape.T),lw=0.5,**kwargs)
+
+        ### add stars FIXME: hard coded...bad?
+        mag = stars[:,-1]
+        size = 7*np.max([np.ones_like(mag), 5-mag], axis=0)
+        self.scatter(*self.proj(stars[:,0],stars[:,1]),
+                     s=size,marker='o',edgecolor='none',**kwargs)
+
+        ### add constellation boundaries
+        # Use the safe projection
+        bound = [np.array(self.proj(*b)).T for b in boundaries]
+        collect = LineCollection(bound,linestyle='--',linewidth=0.5,**kwargs)
+        ax.add_collection(collect)
+
+        ### add constellation centers
+        for (name, (x, y))  in centers.items():
+            ax.text(*self(x, y), s=name,
+                    ha='center',va='center',fontsize=8,
+                    **kwargs)
 
     def set_scale(self, array, log=False, sigma=1.0, norm=None):
         if isinstance(array,np.ma.MaskedArray):
