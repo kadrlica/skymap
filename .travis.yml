@@ -27,8 +27,8 @@ install:
 script: 
   - python -c "import skymap; print(skymap.__version__)"
   - if [[ $TRAVIS_PYTHON_VERSION < 3.0 ]]; then
-      conda install ipython notebook
-      nosetests -s
-    else
-      nosetests -s -I test_tutorial.py
+      conda install ipython notebook;
+      nosetests -s;
+    else 
+      nosetests -s -I test_tutorial.py ;
     fi
