@@ -7,20 +7,21 @@
 
 Python skymaps based on [`matplotlib.basemap`](http://matplotlib.org/basemap/).
 
-# Installation
+## Installation
 
-The best way to install skymap is if you have [anaconda](https://anaconda.org/) installed. First, create a conda environment for skymap:
+The best way to install skymap is if you have [anaconda](https://anaconda.org/) installed. If you have trouble, check out the [.travis.yml](.travis.yml) file. The procedure below will create a conda environment and pip install skymap:
 ```
-conda create -n skymap numpy scipy pandas matplotlib basemap=1.0.7 astropy ephem healpy nose -c conda-forge
-```
-
-Then you can install `skymap` via pip:
-```
+conda create -n skymap numpy scipy pandas matplotlib basemap astropy ephem healpy nose -c conda-forge
+source activate skymap
 pip install skymap
 ```
-or if you want the bleeding edge of the code, you can clone and install via github:
+If you want the bleeding edge of skymap, you can follow the directions above to create the conda environment, but then install by cloning directly from github:
 ```
 git clone https://github.com/kadrlica/skymap.git
 cd skymap
 python setup.py install
 ```
+
+## Tutorial
+
+If you want to see what you can do with `skymap`, check out the [tutorial](tutorial/).
