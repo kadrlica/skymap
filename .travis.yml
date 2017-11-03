@@ -21,15 +21,15 @@ install:
   - source activate travis-env
   - python setup.py install
 
-#before_script:
+before_script:
+  - export MPLBACKEND=Agg
+  - conda install ipython notebook;
 
 # command to run tests
 script: 
   - python -c "import skymap; print(skymap.__version__)"
-  - export MPLBACKEND=Agg
   - if [[ $TRAVIS_PYTHON_VERSION < 3.0 ]]; then
-      conda install ipython notebook;
-      nosetests -s;
+      nosetests ;
     else 
-      nosetests -s -I test_tutorial.py ;
+      nosetests -I test_tutorial.py ;
     fi
