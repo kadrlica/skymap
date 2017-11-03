@@ -21,14 +21,14 @@ install:
   - source activate travis-env
   - python setup.py install
 
-before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
-  - conda install ipython notebook
+#before_script:
 
 # command to run tests
 script: 
   - python -c "import skymap; print(skymap.__version__)"
-  - echo $DISPLAY
-  - nosetests -s 
+  - if [[ $TRAVIS_PYTHON_VERSION < 3.0 ]]; then
+      conda install ipython notebook
+      nosetests -s
+    else
+      nosetests -s -I test_tutorial.py
+    fi

@@ -7,7 +7,7 @@ __author__ = "Alex Drlica-Wagner"
 import os,sys
 import unittest
 
-# Careful, have a local mat
+# Careful, have a local .matplotlibrc
 import matplotlib
 
 import pylab as plt
