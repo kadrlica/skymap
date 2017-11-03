@@ -4,3 +4,4 @@ Welcome to [`skymap`](https://github.com/kadrlica/skymap)! At it's core, `skymap
 
 * [Chapter 1: Skymap Base Class](https://github.com/kadrlica/skymap/blob/master/tutorial/chapter1_skymap_base_class.ipynb)
 * [Chapter 2: Skymap Subclasses](https://github.com/kadrlica/skymap/blob/master/tutorial/chapter1_skymap_subclasses.ipynb)
+* [Chapter 3: Skymap and HEALPix](https://github.com/kadrlica/skymap/blob/master/tutorial/chapter1_skymap_healpix.ipynb)

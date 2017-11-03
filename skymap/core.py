@@ -44,18 +44,22 @@ class Skymap(Basemap):
             ('VR','gray'),
             ])
 
-    defaults = dict(celestial=True,rsphere=1.0)
+    defaults = dict(celestial=True, rsphere=1.0, lon_0=0, lat_0=0,
+                    parallels=True,meridians=True)
 
     def __init__(self, *args, **kwargs):
         self.set_observer(kwargs.pop('observer',None))
         self.set_date(kwargs.pop('date',None))
 
         setdefaults(kwargs,self.defaults)
-
+        parallels = kwargs.pop('parallels',True)
+        meridians = kwargs.pop('meridians',True)
         super(Skymap,self).__init__(*args,**kwargs)
 
-        self.draw_parallels()
-        self.draw_meridians()
+        if parallels:
+            self.draw_parallels()
+        if meridians:
+            self.draw_meridians()
         self.wrap_angle = 180
 
         self.resolution = 'c'
@@ -72,14 +76,15 @@ class Skymap(Basemap):
         defaults = dict(labels=[1,0,0,1],labelstyle='+/-')
         if not args:
             defaults.update(circles=np.arange(-60,90,30))
-        if self.projection in ['ortho','geos','nsper','aeqd']:
+        if self.projection in ['ortho','geos','nsper','aeqd','vandg']:
             defaults.update(labels=[0,0,0,0])
         setdefaults(kwargs,defaults)
         return self.drawparallels(*args, **kwargs)
 
     def draw_meridians(self,*args,**kwargs):
         defaults = dict(labels=[1,0,0,1],labelstyle='+/-')
-        if self.projection in ['ortho','geos','nsper','aeqd','sinu','hammer']:
+        if self.projection in ['ortho','geos','nsper','aeqd','vandg',
+                               'sinu','hammer']:
             defaults.update(labels=[0,0,0,0])
         if not args:
             #defaults.update(meridians=np.arange(0,420,60))
@@ -676,7 +681,7 @@ class Skymap(Basemap):
         self.set_axes_limits(ax=ax)
 
 class McBrydeSkymap(Skymap):
-    defaults = dict(projection='mbtfpq',lon_0=0,lat_0=0,celestial=True)
+    defaults = dict(Skymap.defaults,projection='mbtfpq')
 
     def __init__(self,*args,**kwargs):
         setdefaults(kwargs,self.defaults)
@@ -687,7 +692,7 @@ class OrthoSkymap(Skymap):
     # To get oriented on zenith:
     #lon_0=self.get_zenith(),lat_0=self.observer.lat
 
-    defaults = dict(projection='ortho',lon_0=0,lat_0=0)
+    defaults = dict(Skymap.defaults,projection='ortho',celestial=False)
 
     def __init__(self,*args,**kwargs):
         setdefaults(kwargs,self.defaults)

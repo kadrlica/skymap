@@ -40,7 +40,7 @@ def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
         nside = hp.get_nside(hpxmap)
         pixel = np.arange(len(hpxmap),dtype=int)
 
-    ipring,=np.where(np.isfinite(hpxmap) & (hpxmap>hp.UNSEEN))
+    ipring,=np.where(np.isfinite(hpxmap) & (hpxmap!=hp.UNSEEN))
     theta,phi = hp.pix2ang(nside, pixel[ipring])
     lon = np.mod(np.degrees(phi),360)
     lat = 90.0-np.degrees(theta)
