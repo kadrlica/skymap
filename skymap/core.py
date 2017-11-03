@@ -61,7 +61,7 @@ class Skymap(Basemap):
         self.resolution = 'c'
 
     def set_observer(self, observer):
-        observer = ephem.Observer(observer) if observer else ephem.Observer()
+        observer = observer.copy() if observer else ephem.Observer()
         self.observer = observer
 
     def set_date(self,date):
@@ -242,6 +242,7 @@ class Skymap(Basemap):
         for p in np.unique(data['poly']):
             poly = data[data['poly'] == p]
             self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
+            kwargs.pop('label',None)
 
     def draw_paths(self,filename,**kwargs):
         """Draw a text file containing multiple polygons"""
@@ -689,11 +690,7 @@ class OrthoSkymap(Skymap):
     defaults = dict(projection='ortho',lon_0=0,lat_0=0)
 
     def __init__(self,*args,**kwargs):
-        self.set_observer(kwargs.pop('observer',None))
-        self.set_date(kwargs.pop('date',None))
-
         setdefaults(kwargs,self.defaults)
-
         super(OrthoSkymap,self).__init__(*args, **kwargs)
 
     def draw_meridians(self,*args,**kwargs):
