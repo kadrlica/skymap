@@ -422,7 +422,6 @@ class Skymap(Basemap):
         #lonra = [-180.,180.]
         #latra = [-90.,90]
         
-        
         #lon = np.linspace(lonra[0], lonra[1], xsize)
         #lat = np.linspace(latra[0], latra[1], xsize*self.aspect)
         #lon, lat = np.meshgrid(lon, lat)
@@ -558,8 +557,13 @@ class Skymap(Basemap):
         return cbar,cax
 
     def zoom_to_fit(self, hpxmap, pixel=None, nside=None):
+        lonra, latra = self.get_map_range(hpxmap, pixel, nside)
+        self.zoom_to(lonra,latra)
+
+    def zoom_to(self, lonra, latra):
+        (lonmin,lonmax), (latmin,latmax) = lonra, latra
+
         ax = plt.gca()
-        (lonmin,lonmax), (latmin,latmax) = self.get_map_range(hpxmap, pixel, nside)
         self.llcrnrx,self.llcrnry = self(lonmin,latmin)
         self.urcrnrx,self.urcrnry = self(lonmax,latmax)
 
