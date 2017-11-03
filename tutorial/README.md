@@ -1,4 +1,4 @@
-# Index: Skymap Tutorial
+# Skymap Tutorial
 
 Welcome to [`skymap`](https://github.com/kadrlica/skymap)! At it's core, `skymap` is a wrapper around Python's [`basemap`](https://matplotlib.org/basemap/) module for plotting geographic features. This is is a brief tutorial consisting of ipython notebooks that should get you up to speed with `skymap` and it's features.
 
