@@ -29,20 +29,22 @@ nside = 8
 
 SKYMAPS = [Skymap,McBrydeSkymap,OrthoSkymap]
 SURVEYS = [SurveySkymap,SurveyMcBryde,SurveyOrtho]
-ZOOMS = [DESSkymap,BlissSkymap]
+ZOOMS   = [DESSkymap,BlissSkymap]
 
 class TestSkymap(unittest.TestCase):
 
     def test_skymap(self):
-        for cls in SKYMAPS:
-            plt.figure()
+        fig,axes = plt.subplots(1,3,figsize=(12,3))
+        for i,cls in enumerate(SKYMAPS):
+            plt.sca(axes[i])
             m = cls()
             m.draw_milky_way()
             plt.title('Galactic Plane (%s)'%cls.__name__)
 
     def test_survey_skymap(self):
-        for cls in SURVEYS:
-            plt.figure()
+        fig,axes = plt.subplots(1,3,figsize=(12,3))
+        for i,cls in enumerate(SURVEYS):
+            plt.sca(axes[i])
             m = cls()
             m.draw_des()
             m.draw_maglites()
@@ -50,7 +52,7 @@ class TestSkymap(unittest.TestCase):
             plt.title('Footprints (%s)'%cls.__name__)
 
     def test_zoom_skymap(self):
-        for cls in ZOOMS:
+        for i,cls in enumerate(ZOOMS):
             plt.figure()
             m = cls()
             m.draw_des()
@@ -61,8 +63,9 @@ class TestSkymap(unittest.TestCase):
     def test_draw_hpxmap(self):
         """ Test drawing a full healpix skymap """
         hpxmap = np.arange(hp.nside2npix(nside))
-        for cls in SKYMAPS:
-            plt.figure()
+        fig,axes = plt.subplots(1,3,figsize=(12,3))
+        for i,cls in enumerate(SKYMAPS):
+            plt.sca(axes[i])
             m = cls()
             m.draw_hpxmap(hpxmap,xsize=400)
             plt.title('HEALPix Map (%s)'%cls.__name__)
@@ -70,8 +73,9 @@ class TestSkymap(unittest.TestCase):
     def test_draw_explicit_hpxmap(self):
         """ Test an explicit healpix map """
         pix = hpxmap = np.arange(525,535)
-        for cls in SKYMAPS:
-            plt.figure()
+        fig,axes = plt.subplots(1,3,figsize=(12,3))
+        for i,cls in enumerate(SKYMAPS):
+            plt.sca(axes[i])
             m = cls()
             m.draw_hpxmap(hpxmap,pix,nside,xsize=400)
             plt.title('Partial HEALPix Map (%s)'%cls.__name__)
@@ -79,8 +83,9 @@ class TestSkymap(unittest.TestCase):
     def test_draw_hpxbin(self):
         """ Test drawing hpxbin from points """
         kwargs = dict(nside=64)
-        for cls in SKYMAPS:
-            plt.figure()
+        fig,axes = plt.subplots(1,3,figsize=(12,3))
+        for i,cls in enumerate(SKYMAPS):
+            plt.sca(axes[i])
             m = cls()
             # This is not uniform
             size = int(1e6)
@@ -141,7 +146,8 @@ class TestSkymap(unittest.TestCase):
         pixels = skymap.healpix.ang2disc(nside,ra,dec,radius)
         values = pixels
 
-        for cls in SKYMAPS:
+        fig,axes = plt.subplots(1,3,figsize=(12,3))
+        for i,cls in enumerate(SKYMAPS):
             plt.figure()
             m = cls()
             m.draw_hpxmap(values,pixels,nside=nside,xsize=200)

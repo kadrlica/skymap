@@ -40,7 +40,7 @@ def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
         nside = hp.get_nside(hpxmap)
         pixel = np.arange(len(hpxmap),dtype=int)
 
-    ipring,=np.where(np.isfinite(hpxmap) & (hpxmap>hp.UNSEEN))
+    ipring,=np.where(np.isfinite(hpxmap) & (hpxmap!=hp.UNSEEN))
     theta,phi = hp.pix2ang(nside, pixel[ipring])
     lon = np.mod(np.degrees(phi),360)
     lat = 90.0-np.degrees(theta)
@@ -52,10 +52,10 @@ def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
     hi,=np.where(lon > wrap_angle)
     lon[hi] -= 360.0
 
-    lon_min = max(lon.min()-eps,wrap_angle-360)
-    lon_max = min(lon.max()+eps,wrap_angle)
-    lat_min = max(lat.min()-eps,-90)
-    lat_max = min(lat.max()+eps,90)
+    lon_min = max(np.nanmin(lon)-eps,wrap_angle-360)
+    lon_max = min(np.nanmax(lon)+eps,wrap_angle)
+    lat_min = max(np.nanmin(lat)-eps,-90)
+    lat_max = min(np.nanmax(lat)+eps,90)
 
     return (lon_min,lon_max), (lat_min,lat_max)
 
@@ -131,7 +131,6 @@ def np_index_pix_in_pixels(pix,pixels):
 def index_lonlat_in_pixels(lon,lat,pixels,nside):
     pix = ang2pix(nside,lon,lat)
     return index_pix_in_pixels(pix,pixels)
-
 
 def ang2disc(nside, lon, lat, radius, inclusive=False, fact=4, nest=False):
     """
