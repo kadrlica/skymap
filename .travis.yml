@@ -25,9 +25,10 @@ before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
+  - conda install ipython notebook
 
 # command to run tests
 script: 
   - python -c "import skymap; print(skymap.__version__)"
   - echo $DISPLAY
-  - nosetests
+  - nosetests -s 
