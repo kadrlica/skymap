@@ -1,2 +1,0 @@
-# To work with nosetest on travis without DISPLAY
-backend : agg

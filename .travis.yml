@@ -26,6 +26,7 @@ install:
 # command to run tests
 script: 
   - python -c "import skymap; print(skymap.__version__)"
+  - export MPLBACKEND=Agg
   - if [[ $TRAVIS_PYTHON_VERSION < 3.0 ]]; then
       conda install ipython notebook;
       nosetests -s;
