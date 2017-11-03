@@ -17,7 +17,7 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda create -q -n travis-env python=$TRAVIS_PYTHON_VERSION setuptools numpy scipy matplotlib basemap=1.0.7 astropy ephem healpy pandas nose -c conda-forge
+  - conda create -q -n travis-env python=$TRAVIS_PYTHON_VERSION setuptools numpy scipy matplotlib basemap astropy ephem healpy pandas nose -c conda-forge
   - source activate travis-env
   - python setup.py install
 

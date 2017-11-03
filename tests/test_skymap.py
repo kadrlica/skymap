@@ -7,14 +7,8 @@ __author__ = "Alex Drlica-Wagner"
 import os,sys
 import unittest
 
+# Careful, have a local mat
 import matplotlib
-
-if not os.getenv('DISPLAY'): 
-    print("Setting backend: 'Agg'")
-    matplotlib.use('Agg')
-if not sys.flags.interactive:
-    print("Setting backend: 'Agg'")
-    matplotlib.use('Agg')
 
 import pylab as plt
 import numpy as np
@@ -148,7 +142,7 @@ class TestSkymap(unittest.TestCase):
 
         fig,axes = plt.subplots(1,3,figsize=(12,3))
         for i,cls in enumerate(SKYMAPS):
-            plt.figure()
+            plt.sca(axes[i])
             m = cls()
             m.draw_hpxmap(values,pixels,nside=nside,xsize=200)
             m.zoom_to_fit(values,pixels,nside)
@@ -160,6 +154,6 @@ class TestSkymap(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    plt.ion()
+    if sys.flags.interactive: plt.ion()
     unittest.main()
 
