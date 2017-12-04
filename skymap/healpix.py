@@ -74,6 +74,11 @@ def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
     lat = np.linspace(latra[0],latra[1], int(aspect*xsize))
     lon, lat = np.meshgrid(lon, lat)
 
+    # Calculate the value at the average location for pcolormesh
+    # ADW: How does this play with RA = 360 boundary?
+    llon = (lon[1:,1:]+lon[:-1,:-1])/2.
+    llat = (lat[1:,1:]+lat[:-1,:-1])/2.
+
     if nside is None:
         if isinstance(hpxmap,np.ma.MaskedArray):
             nside = hp.get_nside(hpxmap.data)
@@ -82,9 +87,9 @@ def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
 
     # Old version of healpy
     try:
-        pix = hp.ang2pix(nside,lon,lat,lonlat=True)
+        pix = hp.ang2pix(nside,llon,llat,lonlat=True)
     except TypeError:
-        pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+        pix = hp.ang2pix(nside,np.radians(90-llat),np.radians(llon))
 
     if pixel is None:
         values = masked_array(hpxmap[pix])

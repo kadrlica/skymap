@@ -49,6 +49,14 @@ class SurveySkymap(Skymap):
         filename = os.path.join(get_datadir(),'des-round13-poly.txt')
         self.draw_polygon(filename,**kwargs)
 
+    def draw_des17(self,**kwargs):
+        """ Draw the DES footprint. """
+        defaults=dict(color='blue', lw=2)
+        setdefaults(kwargs,defaults)
+
+        filename = os.path.join(get_datadir(),'des-round17-poly.txt')
+        self.draw_polygon(filename,**kwargs)
+
     def draw_smash(self,**kwargs):
         """ Draw the SMASH fields. """
         defaults=dict(facecolor='none',color='k')
@@ -181,9 +189,9 @@ class SurveyZoom(SurveyMcBryde):
     FRAME = [[-50,-50,90,90],[10,-75,10,-75]]
     FIGSIZE=(8,5)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, rect=None, *args, **kwargs):
         super(SurveyZoom,self).__init__(*args, **kwargs)
-        self.create_axes()
+        self.create_axes(rect)
 
     @classmethod
     def figure(cls,**kwargs):
@@ -232,12 +240,17 @@ class SurveyZoom(SurveyMcBryde):
             x, y = np.asarray(x), np.asarray(y)
             return self(x,y,inverse=True)
 
+        # Coordinate formatter
+        def format_coord(x, y):
+            return 'lon=%1.4f, lat=%1.4f'%inv_tr(x,y)
+
         # Cycle the coordinates
         extreme_finder = angle_helper.ExtremeFinderCycle(20, 20)
 
         # Find a grid values appropriate for the coordinate.
         # The argument is a approximate number of grid lines.
-        grid_locator1 = angle_helper.LocatorD(8,include_last=False)
+        grid_locator1 = angle_helper.LocatorD(9,include_last=False)
+        #grid_locator1 = angle_helper.LocatorD(8,include_last=False)
         grid_locator2 = angle_helper.LocatorD(6,include_last=False)
 
         # Format the values of the grid
@@ -253,11 +266,20 @@ class SurveyZoom(SurveyMcBryde):
         )
 
         fig = plt.gcf()
-        ax = axisartist.Subplot(fig,rect,grid_helper=grid_helper)
-        fig.add_subplot(ax)
+        if rect is None:
+            # This doesn't quite work. Need to remove the existing axis...
+            rect = plt.gca().get_position()
+            plt.gca().axis('off')
+            ax = axisartist.Axes(fig,rect,grid_helper=grid_helper)
+            fig.add_axes(ax)
+        else:
+            print 'axisartist'
+            ax = axisartist.Subplot(fig,rect,grid_helper=grid_helper)
+            fig.add_subplot(ax)
 
+        ax.format_coord = format_coord
         ax.axis['left'].major_ticklabels.set_visible(True)
-        ax.axis['right'].major_ticklabels.set_visible(True)
+        ax.axis['right'].major_ticklabels.set_visible(False)
         ax.axis['bottom'].major_ticklabels.set_visible(True)
         ax.axis['top'].major_ticklabels.set_visible(True)
 
@@ -265,9 +287,10 @@ class SurveyZoom(SurveyMcBryde):
         ax.set_ylabel("Declination")
         #self.set_axes_limits()
 
+        self.axisartist = ax
         return fig,ax
 
-class DESSkymap(SurveyZoom):
+class DESSkymapMcBryde(SurveyZoom):
     """Class for plotting a zoom on DES. This is relatively inflexible."""
     # RA, DEC frame limits
     FRAME = [[-50,-50,90,90],[10,-75,10,-75]]
@@ -281,6 +304,123 @@ class DESSkymap(SurveyZoom):
     def create_tick_formatter(self):
         return ZoomFormatterDES()
         #return ZoomFormatter180()
+
+DESSkymap = DESSkymapMcBryde
+
+class DESSkymapQ1(DESSkymapMcBryde):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[10,-46],[-68,-38]]
+
+    def draw_inset_colorbar(self, *args, **kwargs):
+        defaults = dict(loc=4,height="6%",width="20%",bbox_to_anchor=(0,0.05,1,1))
+        setdefaults(kwargs,defaults)
+        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
+
+class DESSkymapQ2(DESSkymapMcBryde):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[60,0],[8,-45]]
+
+    def draw_inset_colorbar(self, *args, **kwargs):
+        defaults = dict(loc=2,width="30%",height="4%",bbox_to_anchor=(0,-0.1,1,1))
+        setdefaults(kwargs,defaults)
+        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
+
+class DESSkymapQ3(DESSkymapMcBryde):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[5,60],[-68,-38]]
+
+    def draw_inset_colorbar(self, *args, **kwargs):
+        defaults = dict(loc=3,height="7%",bbox_to_anchor=(0,0.05,1,1))
+        setdefaults(kwargs,defaults)
+        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
+
+class DESSkymapCart(SurveyZoom):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[-60,-60,100,100],[10,-75,10,-75]]
+    FIGSIZE=(8,5)
+
+    def __init__(self, *args, **kwargs):
+        defaults = dict(projection='cyl',celestial=True)
+        setdefaults(kwargs,defaults)
+        super(DESSkymapCart,self).__init__(*args, **kwargs)
+
+    def create_tick_formatter(self):
+        return ZoomFormatterDES()
+        #return ZoomFormatter180()
+
+class DESSkymapQ4(DESSkymapMcBryde):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[90,70],[-15,-55]]
+
+    def draw_inset_colorbar(self, *args, **kwargs):
+        defaults = dict(loc=3,width="30%",height="4%",bbox_to_anchor=(0,0.05,1,1))
+        setdefaults(kwargs,defaults)
+        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
+
+
+class DESLambert(SurveySkymap):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FIGSIZE=(8,5)
+
+    def __init__(self, *args, **kwargs):
+        defaults = dict(projection='laea',lon_0=120,lat_0=-90,
+                        llcrnrlon=-110,llcrnrlat=8,
+                        urcrnrlon=60,urcrnrlat=-15,
+                        round=False,celestial=False)
+
+        setdefaults(kwargs,defaults)
+        super(SurveySkymap,self).__init__(*args, **kwargs)
+
+
+    def draw_meridians(self,*args,**kwargs):
+
+        def lon2str(deg):
+            # This is a function just to remove some weird string formatting
+            deg -= 360. * (deg >= 180)
+            if (np.abs(deg) == 0):
+                return r"$%d{}^{\circ}$"%(deg)
+            elif (np.abs(deg) == 180):
+                return r"$%+d{}^{\circ}$"%(np.abs(deg))
+            else:
+                return r"$%+d{}^{\circ}$"%(deg)
+
+        defaults = dict(labels=[1,1,1,1],labelstyle='+/-',
+                        fontsize=14,fmt=lon2str)
+        if not args:
+            defaults.update(meridians=np.arange(0,360,60))
+        setdefaults(kwargs,defaults)
+
+        return self.drawmeridians(*args,**kwargs)
+
+    def draw_parallels(self,*args,**kwargs):
+        defaults = dict(labels=[0,0,0,0])
+        setdefaults(kwargs,defaults)
+        return super(DESLambert,self).draw_parallels(*args,**kwargs)
+
+    def draw_inset_colorbar(self,*args,**kwargs):
+        defaults = dict(bbox_to_anchor=(-0.01,0.07,1,1))
+        setdefaults(kwargs,defaults)
+        return super(DESLambert,self).draw_inset_colorbar(*args,**kwargs)
+
+
+class DESPolarLambert(DESLambert):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FIGSIZE=(8,8)
+
+    def __init__(self, *args, **kwargs):
+        defaults = dict(projection='splaea',lon_0=60,boundinglat=-20,
+                        round=True,celestial=True,parallels=True)
+        setdefaults(kwargs,defaults)
+        super(SurveySkymap,self).__init__(*args, **kwargs)
+
+
 
 class BlissSkymap(SurveyZoom):
     """Class for plotting a zoom on BLISS. This is relatively inflexible."""

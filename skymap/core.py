@@ -16,6 +16,7 @@ import healpy as hp
 import scipy.ndimage as nd
 
 from matplotlib.collections import LineCollection
+from matplotlib.patches import Polygon
 
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.basemap import pyproj
@@ -60,7 +61,13 @@ class Skymap(Basemap):
             self.draw_parallels()
         if meridians:
             self.draw_meridians()
-        self.wrap_angle = 180
+
+        # Coordinate formatter
+        def format_coord(x, y):
+            return 'lon=%1.4f, lat=%1.4f'%self(x,y,inverse=True)
+        plt.gca().format_coord = format_coord
+
+        self.wrap_angle = np.mod(kwargs['lon_0'] + 180,360)
 
         self.resolution = 'c'
 
@@ -103,51 +110,6 @@ class Skymap(Basemap):
         dec = np.pi / 2 - np.arccos(z)
         return ra, dec
 
-    def draw_great_circle(self, lon1, lat1, lon2, lat2, **kwargs):
-        lon1 = np.radians(lon1)
-        lat1 = np.radians(lat1)
-        lon2 = np.radians(lon2)
-        lat2 = np.radians(lat2)
-
-        x1, y1, z1 = self.cartesian(lon1, lat1)
-        x2, y2, z2 = self.cartesian(lon2, lat2)
-
-        u = np.array([x1, y1, z1])
-        v = np.array([x2, y2, z2])
-        w = np.cross(np.cross(u, v), u)
-        w /= np.linalg.norm(w)
- 
-        tt = np.linspace(0, 2 * np.pi, 100)
-
-        xx = []
-        yy = []
-        for t in tt:
-            r = u * np.cos(t) + w * np.sin(t)
-            lon, lat = self.spherical(r[0], r[1], r[2])
-            xx.append(np.degrees(lon))
-            yy.append(np.degrees(lat))
-
-        x2 = np.copy(xx)
-        y2 = np.copy(yy)
-        for i in range(len(xx) - 1):
-            if np.abs(xx[i] - xx[i + 1]) > 300: # jump would be 360, but could be smaller bc finite number of points
-                x1 = xx[:i + 1]
-                x2 = xx[i + 1:]
-                y1 = yy[:i + 1]
-                y2 = yy[i + 1:]
-
-                x1, y1 = self(x1, y1)
-                if 'c' not in kwargs:
-                    self.plot(x1, y1, c='#1F618D', **kwargs)
-                else:
-                    self.plot(x1, y1, **kwargs)
-        
-        x2, y2 = self(x2, y2)
-        if 'c' not in kwargs:
-            return self.plot(x2, y2, c='#1F618D', **kwargs)
-        else:
-            return self.plot(x2, y2, **kwargs)
-
     def proj(self,lon,lat):
         """ Remove points outside of projection """
         # Should this overload __call__?
@@ -162,72 +124,137 @@ class Skymap(Basemap):
         return -lon_zen
 
     @staticmethod
-    def wrap_index(ra, dec, wrap=180.):
-        ra = np.atleast_1d(ra)
-        dec = np.atleast_1d(dec)
-
+    def wrap_index(lon, lat, wrap=180.):
+        """ Find the index where the array wraps.
+        """
         # No wrap: ignore
         if wrap is None:  return None
+
+        lon = np.atleast_1d(lon)
+        lat = np.atleast_1d(lat)
+
         # No array: ignore
-        if len(ra)==1 or len(dec)==1: return None
+        if len(lon)==1 or len(lat)==1: return None
+
+        # Map [0,360)
+        lon = np.mod(lon,360)
+        wrap = np.mod(wrap,360)
 
         # Find the index of the entry closest to the wrap angle
-        idx = np.abs(ra - wrap).argmin()
+        idx = np.abs(lon - wrap).argmin()
         # First or last index: ignore
-        if idx == 0 or idx+1 == len(ra): return None
+        if idx == 0 or idx+1 == len(lon): return None
         # Value exactly equals wrap, choose next value
-        elif (ra[idx] == wrap): idx += 1
+        elif (lon[idx] == wrap): idx += 1
         # Wrap angle sandwiched
-        elif (ra[idx]<wrap) and (ra[idx+1]>wrap): idx += 1
-        elif (ra[idx]<wrap) and (ra[idx-1]>wrap): idx += 0
-        elif (ra[idx]>wrap) and (ra[idx+1]<wrap): idx += 1
-        elif (ra[idx]>wrap) and (ra[idx-1]<wrap): idx += 0
+        elif (lon[idx]<wrap) and (lon[idx+1]>wrap): idx += 1
+        elif (lon[idx]<wrap) and (lon[idx-1]>wrap): idx += 0
+        elif (lon[idx]>wrap) and (lon[idx+1]<wrap): idx += 1
+        elif (lon[idx]>wrap) and (lon[idx-1]<wrap): idx += 0
         # There is no wrap: ignore
         else: return None
 
         return idx
 
     @classmethod
-    def roll(cls,ra,dec,wrap=180.):
-        """ Roll an ra,dec combination to split 180 boundary 
+    def roll(cls,lon,lat,wrap=180.):
+        """ Roll an lon,lat combination to split 180 boundary
         Parameters:
         -----------
-        ra : right ascension (deg)
-        dec: declination (deg)
+        lon : right ascension (deg)
+        lat: declination (deg)
         wrap_angle : angle to wrap at (deg)
         """
-        ra = np.atleast_1d(ra)
-        dec = np.atleast_1d(dec)
+        lon = np.atleast_1d(lon)
+        lat = np.atleast_1d(lat)
 
         # Do nothing
-        if wrap is None: return ra,dec
-        if len(ra)==1 or len(dec)==1: return ra,dec
+        if wrap is None: return lon,lat
+        if len(lon)==1 or len(lat)==1: return lon,lat
 
-        idx = cls.wrap_index(ra,dec,wrap)
-        if idx is None: return ra, dec
+        idx = cls.wrap_index(lon,lat,wrap)
+        if idx is None: return lon, lat
 
-        return np.roll(ra,-idx), np.roll(dec,-idx)
+        return np.roll(lon,-idx), np.roll(lat,-idx)
 
     @classmethod
-    def split(cls,ra,dec,wrap=180.):
-        """ Split an ra,dec combination into lists across a wrap boundary
+    def split(cls,lon,lat,wrap=180.):
+        """ Split an lon,lat combination into lists across a wrap boundary
         Parameters:
         -----------
-        ra : right ascension (deg)
-        dec: declination (deg)
+        lon : right ascension (deg)
+        lat: declination (deg)
         wrap_angle : angle to wrap at (deg)
         """
-        ra = np.atleast_1d(ra)
-        dec = np.atleast_1d(dec)
+        lon = np.atleast_1d(lon)
+        lat = np.atleast_1d(lat)
 
         # Do nothing
-        if wrap is None: return ra,dec
-        if len(ra)==1 or len(dec)==1: return ra,dec
+        if wrap is None: return [lon],[lat]
+        if len(lon)==1 or len(lat)==1: return [lon],[lat]
 
-        idx = cls.wrap_index(ra,dec,wrap)
-        if idx is None: return ra, dec
+        idx = cls.wrap_index(lon,lat,wrap)
+        if idx is None: return [lon], [lat]
 
-        return np.split(ra,[idx]), np.split(dec,[idx])
+        return np.split(lon,[idx]), np.split(lat,[idx])
+
+    def draw_great_circle(self, lon1, lat1, lon2, lat2, arc='both', **kwargs):
+        """
+        Draw a great circle between two points.
+
+        Parameters:
+        -----------
+        lon1, lat1 : The longitude/latitude of first point
+        lon2, lat2 : The longitude/latitude of first point
+        arc        : ['both','long','short'] which arc segment to draw
+        kwargs     : keyword arguments to matplotlib.plot
+
+        Returns:
+        --------
+        matplotlib.plot
+        """
+
+        #defaults = dict(color='#1F618D')
+        #setdefaults(kwargs,defaults)
+
+        x1, y1, z1 = self.cartesian(np.radians(lon1), np.radians(lat1))
+        x2, y2, z2 = self.cartesian(np.radians(lon2), np.radians(lat2))
+
+        u = np.array([x1, y1, z1])
+        v = np.array([x2, y2, z2])
+        w = np.cross(np.cross(u, v), u)
+        w /= np.linalg.norm(w)
+
+        tt = np.linspace(0, 2 * np.pi, 360)
+        r = u[:,np.newaxis] * np.cos(tt) + w[:,np.newaxis] * np.sin(tt)
+        lon,lat = np.degrees(self.spherical(r[0], r[1], r[2]))
+
+        # ADW: Is there any way this could not split into two elements?
+        lons,lats = self.split(lon,lat,lon2)
+
+        lons[0][-1] = lon2
+        lats[0][-1] = lat2
+        lons[1][0]  = lon2
+        lats[1][0]  = lat2
+
+        if len(lons[0]) < len(lons[1]):
+            (slon,llon),(slat,llat) = lons,lats
+        else:
+            (llon,slon), (llat,slat) = lons,lats
+
+        # ADW: Using zip here isn't great
+        if arc in ['short','both']:
+            #print 'short'
+            for _lon,_lat in zip(*self.split(slon,slat,self.wrap_angle)):
+                self.plot(*self(_lon,_lat),**kwargs)
+
+        if arc in ['long','both']:
+            #print 'long'
+            for _lon,_lat in zip(*self.split(llon,llat,self.wrap_angle)):
+                self.plot(*self(_lon,_lat),**kwargs)
+
+        return lon,lat
+
 
     def draw_polygon(self,filename,**kwargs):
         """ Draw a polygon footprint. """
@@ -616,13 +643,14 @@ class Skymap(Basemap):
         out = np.clip(out,0.0,1.0)
         return out
 
-    def draw_inset_colorbar(self,format=None,label=None,ticks=None):
+    def draw_inset_colorbar(self,format=None,label=None,ticks=None,fontsize=11,**kwargs):
+        defaults = dict(width="25%", height="5%", loc=7,
+                        bbox_to_anchor=(0.,-0.04,1,1))
+        setdefaults(kwargs,defaults)
+
         ax = plt.gca()
         im = plt.gci()
-        cax = inset_axes(ax, width="25%", height="5%", loc=7,
-                         bbox_to_anchor=(0.,-0.04,1,1),
-                         bbox_transform=ax.transAxes
-                         )
+        cax = inset_axes(ax,bbox_transform=ax.transAxes,**kwargs)
         cmin,cmax = im.get_clim()
 
         if (ticks is None) and (cmin is not None) and (cmax is not None):
@@ -652,7 +680,7 @@ class Skymap(Basemap):
 
         cbar = plt.colorbar(cax=cax,**kwargs)
         cax.xaxis.set_ticks_position('top')
-        cax.tick_params(axis='x', labelsize=11)
+        cax.tick_params(axis='x', labelsize=fontsize)
 
         if format == 'custom':
             ticklabels = cax.get_xticklabels()
@@ -662,7 +690,7 @@ class Skymap(Basemap):
             cax.set_xticklabels(ticklabels)
 
         if label is not None:
-            cbar.set_label(label,size=11)
+            cbar.set_label(label,size=fontsize)
             cax.xaxis.set_label_position('top')
 
         plt.sca(ax)
@@ -673,6 +701,18 @@ class Skymap(Basemap):
         self.zoom_to(lonra,latra)
 
     def zoom_to(self, lonra, latra):
+        """ Zoom the map to a specific longitude and latitude range.
+
+        Parameters:
+        -----------
+        lonra : Longitude range [lonmin,lonmax]
+        latra : Latitude range [latmin,latmax]
+
+        Returns:
+        --------
+        None
+        """
+
         (lonmin,lonmax), (latmin,latmax) = lonra, latra
 
         ax = plt.gca()
@@ -689,6 +729,8 @@ class McBrydeSkymap(Skymap):
 
     def __init__(self,*args,**kwargs):
         setdefaults(kwargs,self.defaults)
+        if np.abs(kwargs['lon_0']) > 180:
+            raise Exception("Basemap requires: -180 < lon_0 < 180")
         super(McBrydeSkymap,self).__init__(*args, **kwargs)
 
 class OrthoSkymap(Skymap):
@@ -718,3 +760,70 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     args = parser.parse_args()
+
+    # Deprecated
+    #def draw_great_circle(self, lon1, lat1, lon2, lat2, **kwargs):
+    #    """
+    #    Draw a great circle between two points.
+    #
+    #    Parameters:
+    #    -----------
+    #    lon1, lat1 : The longitude/latitude of first point
+    #    lon2, lat2 : The longitude/latitude of first point
+    #    kwargs     : keyword arguments to matplotlib.plot
+    #
+    #    Returns:
+    #    --------
+    #    matplotlib.plot
+    #    """
+    #
+    #    defaults = dict(color='#1F618D')
+    #    setdefaults(kwargs,defaults)
+    #
+    #    lon1 = np.radians(lon1)
+    #    lat1 = np.radians(lat1)
+    #    lon2 = np.radians(lon2)
+    #    lat2 = np.radians(lat2)
+    #
+    #    x1, y1, z1 = self.cartesian(lon1, lat1)
+    #    x2, y2, z2 = self.cartesian(lon2, lat2)
+    #
+    #    u = np.array([x1, y1, z1])
+    #    v = np.array([x2, y2, z2])
+    #    w = np.cross(np.cross(u, v), u)
+    #    w /= np.linalg.norm(w)
+    #
+    #    tt = np.linspace(0, 2 * np.pi, 100)
+    #
+    #    xx = []
+    #    yy = []
+    #
+    #    # ADW: This is where the full circle is generated. Would like
+    #    # to eventually have the option to just draw the points
+    #    # between lon1,lat1 and lon2,lat2
+    #    for t in tt:
+    #        r = u * np.cos(t) + w * np.sin(t)
+    #        lon, lat = self.spherical(r[0], r[1], r[2])
+    #        xx.append(np.degrees(lon))
+    #        yy.append(np.degrees(lat))
+    #
+    #    # ADW: Deal with the axis break. This would be better be
+    #    # done consistently with whatever mechanism is used to draw
+    #    # countries etc.
+    #    x2 = np.copy(xx)
+    #    y2 = np.copy(yy)
+    #    for i in range(len(xx) - 1):
+    #        # jump would be 360, but could be smaller bc finite number of points
+    #        # ADW: should respect wrap_angle
+    #        #if np.abs(xx[i] - xx[i + 1]) > 300:
+    #        if np.abs(xx[i] - xx[i + 1]) > self.wrap_angle:
+    #            x1 = xx[:i + 1]
+    #            x2 = xx[i + 1:]
+    #            y1 = yy[:i + 1]
+    #            y2 = yy[i + 1:]
+    #
+    #            x1, y1 = self(x1, y1)
+    #            self.plot(x1, y1, **kwargs)
+    #
+    #    x2, y2 = self(x2, y2)
+    #    return self.plot(x2, y2, **kwargs)
