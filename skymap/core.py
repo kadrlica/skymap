@@ -262,11 +262,12 @@ class Skymap(Basemap):
         setdefaults(kwargs,defaults)
 
         poly = np.loadtxt(filename,dtype=[('ra',float),('dec',float)])
-        self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
+        return self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
 
     def draw_polygon_radec(self,ra,dec,**kwargs):
         xy = self.proj(*self.roll(ra,dec,self.wrap_angle))
         self.plot(*xy,**kwargs)
+        return xy
 
     def draw_polygons(self,filename,**kwargs):
         """Draw a text file containing multiple polygons"""
