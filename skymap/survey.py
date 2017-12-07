@@ -7,6 +7,7 @@ import os
 import numpy as np
 import pylab as plt
 import pandas as pd
+from collections import OrderedDict as odict
 
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
@@ -16,6 +17,29 @@ import  mpl_toolkits.axisartist.angle_helper as angle_helper
 
 from skymap.utils import setdefaults,get_datadir,hpx_gal2cel
 from skymap.core import Skymap,McBrydeSkymap,OrthoSkymap
+from skymap.constants import DECAM
+
+# Derived from telra,teldec of 10000 exposures
+DES_SN = odict([
+    ('E1',dict(ra=7.874,  dec=-43.010)),
+    ('E2',dict(ra=9.500,  dec=-43.999)),
+    ('X1',dict(ra=34.476, dec=-4.931 )),
+    ('X2',dict(ra=35.664, dec=-6.413 )),
+    ('X3',dict(ra=36.449, dec=-4.601 )),
+    ('S1',dict(ra=42.818, dec=0.000  )),
+    ('S2',dict(ra=41.193, dec=-0.991 )),
+    ('C1',dict(ra=54.274, dec=-27.113)),
+    ('C2',dict(ra=54.274, dec=-29.090)),
+    ('C3',dict(ra=52.647, dec=-28.101)),
+])
+
+DES_SN_LABELS = odict([
+    ('SN-E',   dict(ra=15, dec=-38, ha='center')),
+    ('SN-X',   dict(ra=35, dec=-13, ha='center')),
+    ('SN-S',   dict(ra=55, dec=0,   ha='center')),
+    ('SN-C',   dict(ra=57, dec=-36, ha='center')),
+])
+
 
 class SurveySkymap(Skymap):
     """Extending to survey specific functions.
@@ -43,11 +67,7 @@ class SurveySkymap(Skymap):
 
     def draw_des(self,**kwargs):
         """ Draw the DES footprint. """
-        defaults=dict(color='red', lw=2)
-        setdefaults(kwargs,defaults)
-
-        filename = os.path.join(get_datadir(),'des-round17-poly.txt')
-        self.draw_polygon(filename,**kwargs)
+        return self.draw_des17(**kwargs)
 
     def draw_des13(self,**kwargs):
         """ Draw the DES footprint. """
@@ -55,7 +75,7 @@ class SurveySkymap(Skymap):
         setdefaults(kwargs,defaults)
 
         filename = os.path.join(get_datadir(),'des-round13-poly.txt')
-        self.draw_polygon(filename,**kwargs)
+        return self.draw_polygon(filename,**kwargs)
 
     def draw_des17(self,**kwargs):
         """ Draw the DES footprint. """
@@ -63,7 +83,14 @@ class SurveySkymap(Skymap):
         setdefaults(kwargs,defaults)
 
         filename = os.path.join(get_datadir(),'des-round17-poly.txt')
-        self.draw_polygon(filename,**kwargs)
+        return self.draw_polygon(filename,**kwargs)
+
+    def draw_des_sn(self,**kwargs):
+        defaults = dict(facecolor='none',edgecolor='k',lw=1,zorder=10)
+        setdefaults(kwargs,defaults)
+        for v in DES_SN.values():
+            # This does the projection correctly, but fails at boundary
+            self.tissot(v['ra'],v['dec'],DECAM,100,**kwargs)
 
     def draw_smash(self,**kwargs):
         """ Draw the SMASH fields. """
@@ -398,18 +425,27 @@ class DESLambert(SurveySkymap):
             else:
                 return r"$%+d{}^{\circ}$"%(deg)
 
-        defaults = dict(labels=[1,1,1,1],labelstyle='+/-',
-                        fontsize=14,fmt=lon2str)
+        #defaults = dict(labels=[1,1,1,1],labelstyle='+/-',
+        #                fontsize=14,fmt=lon2str)
+        defaults = dict(fmt=lon2str,labels=[1,1,1,1],fontsize=14)
         if not args:
             defaults.update(meridians=np.arange(0,360,60))
         setdefaults(kwargs,defaults)
 
-        return self.drawmeridians(*args,**kwargs)
+        #return self.drawmeridians(*args,**kwargs)
+        return super(DESLambert,self).draw_meridians(*args,**kwargs)
 
     def draw_parallels(self,*args,**kwargs):
         defaults = dict(labels=[0,0,0,0])
         setdefaults(kwargs,defaults)
-        return super(DESLambert,self).draw_parallels(*args,**kwargs)
+        ret =  super(DESLambert,self).draw_parallels(*args,**kwargs)
+
+        ax = plt.gca()
+        for l in ret.keys():
+            ax.annotate(r"$%+d{}^{\circ}$"%(l), self(0,l),xycoords='data',
+                        xytext=(+5,+5),textcoords='offset points',
+                        va='top',ha='left',fontsize=12)
+        return ret
 
     def draw_inset_colorbar(self,*args,**kwargs):
         defaults = dict(bbox_to_anchor=(-0.01,0.07,1,1))
