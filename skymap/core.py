@@ -80,7 +80,7 @@ class Skymap(Basemap):
         self.observer.date = date
 
     def draw_parallels(self,*args,**kwargs):
-        defaults = dict(labels=[1,0,0,1],labelstyle='+/-',dashes=(2,4),
+        defaults = dict(labels=[1,0,0,1],labelstyle='+/-',dashes=(2,3),
                         color='gray',linewidth=0.75)
         if not args:
             defaults.update(circles=np.arange(-60,90,30))
@@ -90,7 +90,7 @@ class Skymap(Basemap):
         return self.drawparallels(*args, **kwargs)
 
     def draw_meridians(self,*args,**kwargs):
-        defaults = dict(labels=[1,0,0,1],labelstyle='+/-',dashes=(2,4),
+        defaults = dict(labels=[1,0,0,1],labelstyle='+/-',dashes=(2,3),
                         color='gray',linewidth=0.75)
         if self.projection in ['ortho','geos','nsper','aeqd','vandg',
                                'sinu','hammer']:
