@@ -342,6 +342,8 @@ class DESSkymapMcBryde(SurveyZoom):
 
 DESSkymap = DESSkymapMcBryde
 
+### These should be moved into streamlib
+
 class DESSkymapQ1(DESSkymapMcBryde):
     """Class for plotting a zoom on DES. This is relatively inflexible."""
     # RA, DEC frame limits
