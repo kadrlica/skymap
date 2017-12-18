@@ -63,6 +63,9 @@ class Skymap(Basemap):
             self.draw_meridians()
 
         # Coordinate formatter
+        # This is creating an axes (which we really don't want)
+        # Better to stick in set_axes_limits
+        ax = self._check_ax()
         def format_coord(x, y):
             return 'lon=%1.4f, lat=%1.4f'%self(x,y,inverse=True)
         plt.gca().format_coord = format_coord
@@ -457,13 +460,40 @@ class Skymap(Basemap):
                               xsize=xsize,aspect=self.aspect,
                               lonra=lonra,latra=latra)
 
+
+    def smooth(self,hpxmap,badval=hp.UNSEEN,sigma=None):
+        """ Smooth a healpix map """
+        healpix.check_hpxmap(hpxmap,None,None)
+        hpxmap = healpix.masked_array(hpxmap,badval)
+        hpxmap.fill_value = np.ma.median(hpxmap)
+        smooth = hp.smoothing(hpxmap,sigma=np.radians(sigma),verbose=False)
+        return np.ma.array(smooth,mask=hpxmap.mask)
+
     def draw_hpxmap(self, hpxmap, pixel=None, nside=None, xsize=800,
-                    lonra=None, latra=None, badval=hp.UNSEEN, **kwargs):
+                    lonra=None, latra=None, badval=hp.UNSEEN, smooth=None, **kwargs):
         """
         Use pcolor/pcolormesh to draw healpix map.
+
+        Parameters:
+        -----------
+        hpxmap: input healpix map
+        pixel:  explicit pixel indices (required for partial maps)
+        nside:  explicit nside of the map (required for partial maps)
+        xsize:  resolution of the output image
+        lonra:  longitude range [-180,180] (deg)
+        latra:  latitude range [-90,90] (deg)
+        badval: set of values considered "bad"
+        smooth: gaussian smoothing kernel (deg)
+
+        Returns:
+        --------
+        im,lon,lat,values : mpl image with pixel longitude, latitude (deg), and values
         """
         healpix.check_hpxmap(hpxmap,pixel,nside)
         hpxmap = healpix.masked_array(hpxmap,badval)
+
+        if smooth and hp.isnpixok(len(hpxmap)):
+            hpxmap = self.smooth(hpxmap,sigma=smooth)
 
         #if pixel is None:
         #    nside = hp.get_nside(hpxmap.data)

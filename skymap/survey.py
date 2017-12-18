@@ -275,9 +275,6 @@ class SurveyZoom(SurveyMcBryde):
             x, y = np.asarray(x), np.asarray(y)
             return self(x,y,inverse=True)
 
-        # Coordinate formatter
-        def format_coord(x, y):
-            return 'lon=%1.4f, lat=%1.4f'%inv_tr(x,y)
 
         # Cycle the coordinates
         extreme_finder = angle_helper.ExtremeFinderCycle(20, 20)
@@ -311,6 +308,9 @@ class SurveyZoom(SurveyMcBryde):
             ax = axisartist.Subplot(fig,rect,grid_helper=grid_helper)
             fig.add_subplot(ax)
 
+        ## Coordinate formatter
+        def format_coord(x, y):
+            return 'lon=%1.4f, lat=%1.4f'%inv_tr(x,y)
         ax.format_coord = format_coord
         ax.axis['left'].major_ticklabels.set_visible(True)
         ax.axis['right'].major_ticklabels.set_visible(False)
