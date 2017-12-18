@@ -308,7 +308,6 @@ class SurveyZoom(SurveyMcBryde):
             ax = axisartist.Axes(fig,rect,grid_helper=grid_helper)
             fig.add_axes(ax)
         else:
-            print 'axisartist'
             ax = axisartist.Subplot(fig,rect,grid_helper=grid_helper)
             fig.add_subplot(ax)
 
