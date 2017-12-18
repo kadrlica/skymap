@@ -203,7 +203,81 @@ class Skymap(Basemap):
 
         return np.split(lon,[idx]), np.split(lat,[idx])
 
-    def draw_great_circle(self, lon1, lat1, lon2, lat2, arc='both', **kwargs):
+    def great_circle(self,lon1, lat1, lon2, lat2, arc='full'):
+        """
+        Create a great circle between two points.
+
+        Parameters:
+        -----------
+        lon1, lat1 : The longitude/latitude of first point
+        lon2, lat2 : The longitude/latitude of second point
+        arc        : ['full','long','short'] which arc segment to draw
+
+        Returns:
+        --------
+        matplotlib.plot
+        """
+
+        x1, y1, z1 = self.cartesian(np.radians(lon1), np.radians(lat1))
+        x2, y2, z2 = self.cartesian(np.radians(lon2), np.radians(lat2))
+
+        u = np.array([x1, y1, z1])
+        v = np.array([x2, y2, z2])
+        w = np.cross(np.cross(u, v), u)
+        w /= np.linalg.norm(w)
+
+        tt = np.linspace(0, 2 * np.pi, 360)
+        r = u[:,np.newaxis] * np.cos(tt) + w[:,np.newaxis] * np.sin(tt)
+        lon,lat = np.degrees(self.spherical(r[0], r[1], r[2]))
+
+        # ADW: Is there any way this could not split into two elements?
+        lons,lats = self.split(lon,lat,lon2)
+
+        lons[0][-1] = lon2
+        lats[0][-1] = lat2
+        lons[1][0]  = lon2
+        lats[1][0]  = lat2
+
+        if len(lons[0]) < len(lons[1]):
+            (slon,llon),(slat,llat) = lons,lats
+        else:
+            (llon,slon), (llat,slat) = lons,lats
+
+        if arc in ['full','both']:
+            return lon,lat
+        elif arc == 'short':
+            return slon,slat
+        elif arc == 'long':
+            return llon,llat
+        else:
+            msg = 'Unrecognized arc type: %s'%arc
+            raise ValueError(msg)
+
+
+    def draw_great_circle(self, lon1, lat1, lon2, lat2, arc='full', **kwargs):
+        """
+        Draw a great circle between two points.
+
+        Parameters:
+        -----------
+        lon1, lat1 : The longitude/latitude of first point
+        lon2, lat2 : The longitude/latitude of first point
+        arc        : ['both','long','short'] which arc segment to draw
+        kwargs     : keyword arguments to matplotlib.plot
+
+        Returns:
+        --------
+        matplotlib.plot
+        """
+        # ADW: Using zip here isn't great
+        lon,lat = self.great_circle(lon1,lat1,lon2,lat2,arc)
+        
+        for _lon,_lat in zip(*self.split(lon,lat,self.wrap_angle)):
+            self.plot(*self(_lon,_lat),**kwargs)
+
+        return lon,lat
+        
+    def draw_great_circle2(self, lon1, lat1, lon2, lat2, arc='both', **kwargs):
         """
         Draw a great circle between two points.
 
