@@ -668,6 +668,25 @@ class Skymap(Basemap):
             collection = matplotlib.collections.PolyCollection(corners,**kwargs)
             ax.add_collection(collection)
         plt.draw()
+    draw_decam = draw_focal_planes
+
+    def draw_macho(self, ra, dec, **kwargs):
+        from skymap.instrument.macho import MachoFocalPlane
+        defaults = dict(alpha=0.2,color='gray',edgecolors='none',lw=0)
+        setdefaults(kwargs,defaults)
+        ra,dec = np.atleast_1d(ra,dec)
+        if len(ra) != len(dec):
+            msg = "Dimensions of 'ra' and 'dec' do not match"
+            raise ValueError(msg)
+        camera = MachoFocalPlane()
+        # Should make sure axis exists....
+        ax = plt.gca()
+        for _ra,_dec in zip(ra,dec):
+            corners = camera.project(self,_ra,_dec)
+            collection = matplotlib.collections.PolyCollection(corners,**kwargs)
+            ax.add_collection(collection)
+        plt.draw()
+
 
     # Adapted from Reed Essick
     # https://github.com/reedessick/skymap_statistics
