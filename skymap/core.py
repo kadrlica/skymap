@@ -464,15 +464,19 @@ class Skymap(Basemap):
 
     def draw_lmc(self,**kwargs):
         from skymap.constants import RA_LMC, DEC_LMC, RADIUS_LMC
+        defaults = dict(npts=100,fc='0.7',ec='0.5')
+        setdefaults(kwargs,defaults)
         proj = self.proj(RA_LMC,DEC_LMC)
-        self.tissot(RA_LMC,DEC_LMC,RADIUS_LMC,100,fc='0.7',ec='0.5')
+        self.tissot(RA_LMC,DEC_LMC,RADIUS_LMC,**kwargs)
         plt.text(proj[0],proj[1], 'LMC', weight='bold',
                  fontsize=10, ha='center', va='center', color='k')
 
     def draw_smc(self,**kwargs):
         from skymap.constants import RA_SMC, DEC_SMC, RADIUS_SMC
+        defaults = dict(npts=100,fc='0.7',ec='0.5')
+        setdefaults(kwargs,defaults)
         proj = self.proj(RA_SMC,DEC_SMC)
-        self.tissot(RA_SMC,DEC_SMC,RADIUS_SMC,100,fc='0.7',ec='0.5')
+        self.tissot(RA_SMC,DEC_SMC,RADIUS_SMC,**kwargs)
         plt.text(proj[0],proj[1], 'SMC', weight='bold',
                  fontsize=8, ha='center', va='center', color='k')
 
