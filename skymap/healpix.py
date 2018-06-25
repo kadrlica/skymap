@@ -29,6 +29,13 @@ def check_hpxmap(hpxmap,pixel,nside):
         msg = "'hpxmap' and 'pixel' must have same shape"
         raise Exception(msg)
     
+def create_map(hpxmap,pixel,nside,badval=hp.UNSEEN):
+    """ Create the full map from hpxmap,pixel,nside combo
+    """
+    if pixel is None: return hpxmap
+    m = badval*np.ones(hp.nside2npix(nside),dtype=hpxmap.dtype)
+    m[pixel] = hpxmap
+    return m
     
 def get_map_range(hpxmap, pixel=None, nside=None, wrap_angle=180):
     """ Calculate the longitude and latitude range for a map. """

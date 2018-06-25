@@ -203,7 +203,7 @@ class Skymap(Basemap):
 
         return np.split(lon,[idx]), np.split(lat,[idx])
 
-    def great_circle(self,lon1, lat1, lon2, lat2, arc='full'):
+    def great_circle(self, lon1, lat1, lon2, lat2, arc='full'):
         """
         Create a great circle between two points.
 
@@ -566,7 +566,11 @@ class Skymap(Basemap):
         healpix.check_hpxmap(hpxmap,pixel,nside)
         hpxmap = healpix.masked_array(hpxmap,badval)
 
-        if smooth and hp.isnpixok(len(hpxmap)):
+        if smooth:
+            # To smooth we need the full map
+            hpxmap = healpix.create_map(hpxmap,pixel,nside,badval)
+            pixel,nside = None,None
+            hpxmap = healpix.masked_array(hpxmap,badval)
             hpxmap = self.smooth(hpxmap,sigma=smooth)
 
         #if pixel is None:
@@ -789,20 +793,20 @@ class Skymap(Basemap):
 
         if format is None:
             if (tmin < 1e-2) or (tmax > 1e3):
-                format = '%.1e'
+                format = '$%.1e$'
             elif (tmin > 0.1) and (tmax < 100):
-                format = '%.1f'
+                format = '$%.1f$'
             elif (tmax > 100):
-                format = '%i'
+                format = '$%i$'
             else:
-                format = '%.2g'
+                format = '$%.2g$'
                 #format = '%.2f'
 
         kwargs = dict(format=format,ticks=ticks,orientation='horizontal')
 
         if format == 'custom':
             ticks = np.array([cmin,0.85*cmax])
-            kwargs.update(format='%.0e',ticks=ticks)
+            kwargs.update(format='$%.0e$',ticks=ticks)
 
         cbar = plt.colorbar(cax=cax,**kwargs)
         cax.xaxis.set_ticks_position('top')

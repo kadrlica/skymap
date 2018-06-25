@@ -373,6 +373,16 @@ class DESSkymapQ3(DESSkymapMcBryde):
         setdefaults(kwargs,defaults)
         super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
 
+class DESSkymapQ4(DESSkymapMcBryde):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[90,70],[-15,-55]]
+
+    def draw_inset_colorbar(self, *args, **kwargs):
+        defaults = dict(loc=3,width="30%",height="4%",bbox_to_anchor=(0,0.05,1,1))
+        setdefaults(kwargs,defaults)
+        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
+
 class DESSkymapCart(SurveyZoom):
     """Class for plotting a zoom on DES. This is relatively inflexible."""
     # RA, DEC frame limits
@@ -387,16 +397,6 @@ class DESSkymapCart(SurveyZoom):
     def create_tick_formatter(self):
         return ZoomFormatterDES()
         #return ZoomFormatter180()
-
-class DESSkymapQ4(DESSkymapMcBryde):
-    """Class for plotting a zoom on DES. This is relatively inflexible."""
-    # RA, DEC frame limits
-    FRAME = [[90,70],[-15,-55]]
-
-    def draw_inset_colorbar(self, *args, **kwargs):
-        defaults = dict(loc=3,width="30%",height="4%",bbox_to_anchor=(0,0.05,1,1))
-        setdefaults(kwargs,defaults)
-        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
 
 
 class DESLambert(SurveySkymap):
