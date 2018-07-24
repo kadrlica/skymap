@@ -119,8 +119,8 @@ class Skymap(Basemap):
         """ Remove points outside of projection """
         # Should this overload __call__?
         x, y = self(np.atleast_1d(lon),np.atleast_1d(lat))
-        x[x > 1e29] = None
-        y[y > 1e29] = None
+        x[np.abs(x) > 1e29] = None
+        y[np.abs(y) > 1e29] = None
         return x, y
 
     def get_zenith(self):
@@ -374,6 +374,7 @@ class Skymap(Basemap):
         path = matplotlib.path.Path(vertices)
         patch = matplotlib.patches.PathPatch(path,**kwargs)
         plt.gca().add_artist(patch)
+        return patch
 
     def draw_zenith(self, radius=1.0, **kwargs):
         """
