@@ -599,7 +599,14 @@ class Skymap(Basemap):
         else:
             # Why were we plotting the values.data?
             #im = self.pcolormesh(lon,lat,values.data,**kwargs)
-            im = self.pcolormesh(lon,lat,values,**kwargs)
+
+            # pcolormesh recommends that values be larger than x,y
+            # but basemap has problems with this (sometimes?)
+            # https://github.com/matplotlib/basemap/issues/182
+            try: 
+                im = self.pcolormesh(lon,lat,values,**kwargs)
+            except IndexError:
+                im = self.pcolormesh(lon[:-1,:-1],lat[:-1,:-1],values,**kwargs)
 
         return im,lon,lat,values
 
