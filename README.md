@@ -5,7 +5,11 @@
 [![Release](https://img.shields.io/github/release/kadrlica/skymap.svg)](../../releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../)
 
-Python skymaps based on [`matplotlib.basemap`](http://matplotlib.org/basemap/).
+The `skymap` package provides a astronomically oriented interface to ploting sky maps based on [`matplotlib.basemap`](http://matplotlib.org/basemap/). This package addresses several issues present in the [`healpy`](https://healpy.readthedocs.io/en/latest/) plotting routines:
+1. `healpy` supports a limited set of sky projections (`cartview`, `mollview`, and `gnomview`)
+2. `healpy` converts sparse healpix maps to full maps to plot; this is memory intensive for large `nside`
+
+In addition, `skymap` provides some convenience functionality for large optical surveys.
 
 ## Installation
 
