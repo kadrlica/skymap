@@ -24,6 +24,9 @@ install:
 before_script:
   - export MPLBACKEND=Agg
   - conda install ipython notebook -c conda-forge
+  # There is an issue with the conda-forge build of proj
+  # https://github.com/conda-forge/basemap-feedstock/issues/30
+  - export PROJ_LIB=$CONDA_PREFIX/share/proj
 
 # command to run tests
 script: 
