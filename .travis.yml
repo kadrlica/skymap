@@ -17,16 +17,15 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
+  # There is a (temporary?) issue with conda-forge build that requires proj4
+  # https://github.com/conda-forge/basemap-feedstock/issues/30
   - conda create -q -n travis-env python=$TRAVIS_PYTHON_VERSION setuptools numpy scipy matplotlib basemap astropy ephem healpy pandas nose proj4 -c conda-forge
   - source activate travis-env
   - python setup.py install
 
 before_script:
   - export MPLBACKEND=Agg
-  - conda install ipython notebook -c conda-forge --no-update-deps
-  # There is an issue with the conda-forge build of proj
-  # https://github.com/conda-forge/basemap-feedstock/issues/30
-  #- export PROJ_LIB=$CONDA_PREFIX/share/proj
+  - conda install -q ipython notebook -c conda-forge --no-update-deps
 
 # command to run tests
 script: 
