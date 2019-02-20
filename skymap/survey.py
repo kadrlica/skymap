@@ -106,14 +106,8 @@ class SurveySkymap(Skymap):
         defaults=dict(color='red', lw=2)
         setdefaults(kwargs,defaults)
 
-        filename = os.path.join(get_datadir(),'decals-perimeter.txt')
-        decals = np.genfromtxt(filename,names=['poly','ra','dec'])
-        poly1 = decals[decals['poly'] == 1]
-        poly2 = decals[decals['poly'] == 2]
-        #self.draw_polygon_radec(poly1['ra'],poly1['dec'],**kwargs)
-        #self.draw_polygon_radec(poly2['ra'],poly2['dec'],**kwargs)
-        self.scatter(*self.proj(poly1['ra'],poly1['dec']))
-        self.scatter(*self.proj(poly2['ra'],poly2['dec']))
+        filename = os.path.join(get_datadir(),'decals-poly.txt')
+        return self.draw_polygon(filename,**kwargs)
 
     def draw_jethwa(self,filename=None,log=True,**kwargs):
         import healpy as hp
