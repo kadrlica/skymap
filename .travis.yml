@@ -23,7 +23,7 @@ install:
 
 before_script:
   - export MPLBACKEND=Agg
-  - conda install ipython notebook;
+  - conda install ipython notebook -c conda-forge
 
 # command to run tests
 script: 
