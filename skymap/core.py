@@ -351,10 +351,15 @@ class Skymap(Basemap):
     def draw_polygons(self,filename,**kwargs):
         """Draw a text file containing multiple polygons"""
         data = np.genfromtxt(filename,names=['ra','dec','poly'])
+
+        ret = []
         for p in np.unique(data['poly']):
             poly = data[data['poly'] == p]
-            self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
+            xy = self.draw_polygon_radec(poly['ra'],poly['dec'],**kwargs)
+            ret += [xy]
             kwargs.pop('label',None)
+
+        return ret
 
     def draw_paths(self,filename,**kwargs):
         """Draw a text file containing multiple polygons"""
@@ -364,9 +369,12 @@ class Skymap(Basemap):
             data = np.genfromtxt(filename,names=['ra','dec'])
             data = mlab.rec_append_fields(data,'poly',np.zeros(len(data)))
 
+        ret = []
         for p in np.unique(data['poly']):
             poly = data[data['poly'] == p]
-            self.draw_path_radec(poly['ra'],poly['dec'],**kwargs)
+            path,patch = self.draw_path_radec(poly['ra'],poly['dec'],**kwargs)
+            ret += [(path,patch)]
+        return ret
 
     def draw_path_radec(self,ra,dec,**kwargs):
         xy = self.proj(*self.roll(ra,dec,self.wrap_angle))
@@ -374,7 +382,7 @@ class Skymap(Basemap):
         path = matplotlib.path.Path(vertices)
         patch = matplotlib.patches.PathPatch(path,**kwargs)
         plt.gca().add_artist(patch)
-        return patch
+        return path,patch
 
     def draw_zenith(self, radius=1.0, **kwargs):
         """
