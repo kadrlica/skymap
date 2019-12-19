@@ -67,7 +67,7 @@ class SurveySkymap(Skymap):
 
     def draw_des(self,**kwargs):
         """ Draw the DES footprint. """
-        return self.draw_des17(**kwargs)
+        return self.draw_des19(**kwargs)
 
     def draw_des13(self,**kwargs):
         """ Draw the DES footprint. """
@@ -83,6 +83,14 @@ class SurveySkymap(Skymap):
         setdefaults(kwargs,defaults)
 
         filename = os.path.join(get_datadir(),'des-round17-poly.txt')
+        return self.draw_polygon(filename,**kwargs)
+
+    def draw_des19(self,**kwargs):
+        """ Draw the DES footprint. """
+        defaults=dict(color='blue', lw=2)
+        setdefaults(kwargs,defaults)
+
+        filename = os.path.join(get_datadir(),'des-round19-poly.txt')
         return self.draw_polygon(filename,**kwargs)
 
     def draw_des_sn(self,**kwargs):
