@@ -2,7 +2,7 @@
 
 [![Build](https://img.shields.io/travis/kadrlica/skymap.svg)](https://travis-ci.org/kadrlica/skymap)
 [![PyPI](https://img.shields.io/pypi/v/skymap.svg)](https://pypi.python.org/pypi/skymap)
-[![Release](https://img.shields.io/github/release/kadrlica/skymap.svg)](../../releases)
+[![Release](https://img.shields.io/github/release/kadrlica/skymap.svg?include_prereleases)](../../releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../)
 
 The `skymap` package provides a astronomically oriented interface to ploting sky maps based on [`matplotlib.basemap`](http://matplotlib.org/basemap/). This package addresses several issues present in the [`healpy`](https://healpy.readthedocs.io/en/latest/) plotting routines:
