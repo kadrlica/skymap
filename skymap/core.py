@@ -430,7 +430,7 @@ class Skymap(Basemap):
         glon = np.linspace(0,360,500)
         glat = np.zeros_like(glon)
         ra,dec = self.roll(*gal2cel(glon,glat),wrap=self.wrap_angle)
-        ra -= 360*(ra > 180)
+        ra -= 360*(ra > self.wrap_angle)
 
         self.draw_polygon_radec(ra,dec,**kwargs)
 
@@ -438,7 +438,7 @@ class Skymap(Basemap):
             kwargs.update(dict(ls='--',lw=1))
             for delta in [+width,-width]:
                 ra,dec = self.roll(*gal2cel(glon,glat+delta))
-                ra -= 360*(ra > 180)
+                ra -= 360*(ra > self.wrap_angle)
                 self.draw_polygon_radec(ra,dec,**kwargs)
 
     def draw_magellanic_stream(self,**kwargs):
