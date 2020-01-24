@@ -67,7 +67,7 @@ class SurveySkymap(Skymap):
 
     def draw_des(self,**kwargs):
         """ Draw the DES footprint. """
-        return self.draw_des17(**kwargs)
+        return self.draw_des19(**kwargs)
 
     def draw_des13(self,**kwargs):
         """ Draw the DES footprint. """
@@ -83,6 +83,14 @@ class SurveySkymap(Skymap):
         setdefaults(kwargs,defaults)
 
         filename = os.path.join(get_datadir(),'des-round17-poly.txt')
+        return self.draw_polygon(filename,**kwargs)
+
+    def draw_des19(self,**kwargs):
+        """ Draw the DES footprint. """
+        defaults=dict(color='blue', lw=2)
+        setdefaults(kwargs,defaults)
+
+        filename = os.path.join(get_datadir(),'des-round19-poly.txt')
         return self.draw_polygon(filename,**kwargs)
 
     def draw_des_sn(self,**kwargs):
@@ -106,14 +114,8 @@ class SurveySkymap(Skymap):
         defaults=dict(color='red', lw=2)
         setdefaults(kwargs,defaults)
 
-        filename = os.path.join(get_datadir(),'decals-perimeter.txt')
-        decals = np.genfromtxt(filename,names=['poly','ra','dec'])
-        poly1 = decals[decals['poly'] == 1]
-        poly2 = decals[decals['poly'] == 2]
-        #self.draw_polygon_radec(poly1['ra'],poly1['dec'],**kwargs)
-        #self.draw_polygon_radec(poly2['ra'],poly2['dec'],**kwargs)
-        self.scatter(*self.proj(poly1['ra'],poly1['dec']))
-        self.scatter(*self.proj(poly2['ra'],poly2['dec']))
+        filename = os.path.join(get_datadir(),'decals-poly.txt')
+        return self.draw_polygon(filename,**kwargs)
 
     def draw_jethwa(self,filename=None,log=True,**kwargs):
         import healpy as hp
@@ -377,6 +379,17 @@ class DESSkymapQ4(DESSkymapMcBryde):
     """Class for plotting a zoom on DES. This is relatively inflexible."""
     # RA, DEC frame limits
     FRAME = [[90,70],[-15,-55]]
+
+    def draw_inset_colorbar(self, *args, **kwargs):
+        defaults = dict(loc=3,width="30%",height="4%",bbox_to_anchor=(0,0.05,1,1))
+        setdefaults(kwargs,defaults)
+        super(DESSkymapMcBryde,self).draw_inset_colorbar(*args,**kwargs)
+
+class DESSkymapSPT(DESSkymapMcBryde):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[-55,-55,95,95],[-35,-75,-35,-75]]
+    FIGSIZE=(8,3)
 
     def draw_inset_colorbar(self, *args, **kwargs):
         defaults = dict(loc=3,width="30%",height="4%",bbox_to_anchor=(0,0.05,1,1))
