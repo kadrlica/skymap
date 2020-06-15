@@ -477,11 +477,17 @@ class BlissSkymap(SurveyZoom):
         return ZoomFormatter360()
         
 class MaglitesSkymap(SurveyOrtho):
-    defaults = dict(SurveyOrtho.defaults,lat_0=-90)
+    defaults = dict(SurveyOrtho.defaults,lat_0=-90,celestial=True)
 
     def draw_meridians(self,*args,**kwargs):
         defaults = dict(labels=[1,1,1,1],fontsize=14,labelstyle='+/-')
         setdefaults(kwargs,defaults)
         cardinal = kwargs.pop('cardinal',False)
         meridict = super(OrthoSkymap,self).draw_meridians(*args,**kwargs)
+        # We've switched to celestial, need to update meridian text
+        for k,v in meridict.items():
+            text = v[1][0].get_text()
+            if text.startswith('-'):   text = text.replace('-','+')
+            elif text.startswith('+'): text = text.replace('+','-')
+            v[1][0].set_text(text)
         return meridict
