@@ -13,7 +13,7 @@ warnings.simplefilter("always")
 def masked_array(array,badval=hp.UNSEEN):
     if isinstance(array,np.ma.MaskedArray):
         return array
-    mask = ~np.isfinite(array) | (array==badval)
+    mask = ~np.isfinite(array) | np.in1d(array,badval)
     return np.ma.MaskedArray(array,mask=mask)
 
 def check_hpxmap(hpxmap,pixel,nside):
