@@ -524,16 +524,7 @@ class Skymap(Basemap):
         --------
         hpxmap, im : healpix map and image
         """
-        try:
-            pix = hp.ang2pix(nside,lon,lat,lonlat=True)
-        except TypeError:
-            pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
-
-        npix = hp.nside2npix(nside)
-        hpxmap = hp.UNSEEN*np.ones(npix)
-        idx,cts = np.unique(pix,return_counts=True)
-        hpxmap[idx] = cts
-
+        hpxmap = healpix.hpxbin(lon,lat,nside=nside)
         return hpxmap,self.draw_hpxmap(hpxmap,**kwargs)
 
     def get_map_range(self, hpxmap, pixel=None, nside=None):
