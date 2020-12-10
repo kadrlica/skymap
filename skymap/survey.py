@@ -206,7 +206,7 @@ class ZoomFormatter(angle_helper.FormatterDMS):
     def __call__(self, direction, factor, values):
         values = np.asarray(values)
         values = self._wrap_angle(values)
-        ticks = [self.fmt_d % (int(v),) for v in values]
+        ticks = [self.fmt_d % int(v) for v in values]
         return ticks
 
 class ZoomFormatter360(ZoomFormatter):
@@ -478,8 +478,6 @@ class DESPolarLambert(DESLambert):
         setdefaults(kwargs,defaults)
         super(SurveySkymap,self).__init__(*args, **kwargs)
 
-
-
 class BlissSkymap(SurveyZoom):
     """Class for plotting a zoom on BLISS. This is relatively inflexible."""
     # RA, DEC frame limits
@@ -494,6 +492,22 @@ class BlissSkymap(SurveyZoom):
 
     def create_tick_formatter(self):
         return ZoomFormatter360()
+
+class DelveR1Skymap(SurveyZoom):
+    """Class for plotting a zoom on DES. This is relatively inflexible."""
+    # RA, DEC frame limits
+    FRAME = [[110,110,-85,-85],[10,-75,10,-75]]
+    FIGSIZE=(8,5)
+
+    def __init__(self, *args, **kwargs):
+        defaults = dict(lon_0=-155,celestial=True)
+        setdefaults(kwargs,defaults)
+        super(DelveSkymap,self).__init__(*args, **kwargs)
+
+    def create_tick_formatter(self):
+        return ZoomFormatter360()
+
+DelveSkymap = DelveR1Skymap
         
 class MaglitesSkymap(SurveyOrtho):
     defaults = dict(SurveyOrtho.defaults,lat_0=-90,celestial=True)
