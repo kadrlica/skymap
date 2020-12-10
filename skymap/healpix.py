@@ -118,6 +118,32 @@ def hpx2xy(hpxmap, pixel=None, nside=None, xsize=800, aspect=1.0,
 
     return lon,lat,values
 
+def hpxbin(lon, lat, nside=256):
+    """                                                                              
+    Create a healpix histogram of the counts.                                        
+                                                                                     
+    Parameters:                                                                      
+    -----------                                                                      
+    lon   : input longitude (deg)                                                    
+    lat   : input latitude (deg)                                                     
+    nside : healpix nside resolution                                                 
+                                                                                     
+    Returns:                                                                         
+    --------                                                                         
+    hpxmap : healpix map of counts                                                   
+    """
+    try:
+        pix = hp.ang2pix(nside,lon,lat,lonlat=True)
+    except TypeError:
+        pix = hp.ang2pix(nside,np.radians(90-lat),np.radians(lon))
+    npix = hp.nside2npix(nside)
+    hpxmap = hp.UNSEEN*np.ones(npix)
+    idx,cts = np.unique(pix,return_counts=True)
+    hpxmap[idx] = cts
+
+    return hpxmap
+
+
 def pd_index_pix_in_pixels(pix,pixels):
     pixel_df = pd.DataFrame({'pix':pixel,'idx':np.arange(len(pixel))})
     # Pandas warns about type comparison (probably doesn't like `pix.flat`)...
