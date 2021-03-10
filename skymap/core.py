@@ -685,6 +685,23 @@ class Skymap(Basemap):
         plt.draw()
     draw_decam = draw_focal_planes
 
+    def draw_hsc_focal_planes(self, ra, dec, **kwargs):
+        from skymap.instrument.hsc import HSCFocalPlane
+        defaults = dict(alpha=0.2,color='red',edgecolors='none',lw=0)
+        setdefaults(kwargs,defaults)
+        ra,dec = np.atleast_1d(ra,dec)
+        if len(ra) != len(dec):
+            msg = "Dimensions of 'ra' and 'dec' do not match"
+            raise ValueError(msg)
+        hsc = HSCFocalPlane()
+        # Should make sure axis exists....
+        ax = plt.gca()
+        for _ra,_dec in zip(ra,dec):
+            corners = hsc.project(self,_ra,_dec)
+            collection = matplotlib.collections.PolyCollection(corners,**kwargs)
+            ax.add_collection(collection)
+        plt.draw()
+
     def draw_macho(self, ra, dec, **kwargs):
         from skymap.instrument.macho import MachoFocalPlane
         defaults = dict(alpha=0.2,color='gray',edgecolors='none',lw=0)
