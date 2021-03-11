@@ -306,6 +306,9 @@ class SurveyZoom(SurveyMcBryde):
             plt.gca().axis('off')
             ax = axisartist.Axes(fig,rect,grid_helper=grid_helper)
             fig.add_axes(ax)
+        elif isinstance(rect,list):
+            ax = axisartist.Axes(fig, rect ,grid_helper=grid_helper)
+            fig.add_axes(ax)
         else:
             ax = axisartist.Subplot(fig,rect,grid_helper=grid_helper)
             fig.add_subplot(ax)
