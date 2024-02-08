@@ -14,5 +14,5 @@ from skymap.survey import SurveySkymap,SurveyMcBryde,SurveyOrtho
 from skymap.survey import DESSkymap, BlissSkymap
 
 import warnings
-from matplotlib.cbook import MatplotlibDeprecationWarning
+from matplotlib import MatplotlibDeprecationWarning
 warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
